@@ -1,0 +1,57 @@
+[
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/include/clipper.cpp.o -c /home/llf/Desktop/ILSQN-New/include/clipper.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/include/clipper.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/dataloader.cpp.o -c /home/llf/Desktop/ILSQN-New/dataloader.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/dataloader.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/datawriter.cpp.o -c /home/llf/Desktop/ILSQN-New/datawriter.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/datawriter.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/geometry.cpp.o -c /home/llf/Desktop/ILSQN-New/geometry.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/geometry.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/ilsqn.cpp.o -c /home/llf/Desktop/ILSQN-New/ilsqn.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/ilsqn.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/main.cpp.o -c /home/llf/Desktop/ILSQN-New/main.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/main.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/nofitpolygon.cpp.o -c /home/llf/Desktop/ILSQN-New/nofitpolygon.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/nofitpolygon.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/packing.cpp.o -c /home/llf/Desktop/ILSQN-New/packing.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/packing.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/parameters.cpp.o -c /home/llf/Desktop/ILSQN-New/parameters.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/parameters.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/piece.cpp.o -c /home/llf/Desktop/ILSQN-New/piece.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/piece.cpp"
+},
+{
+  "directory": "/home/llf/Desktop/ILSQN-New/build",
+  "command": "/usr/bin/c++   -g -fopenmp -std=gnu++17 -o CMakeFiles/ILSQN.dir/vector.cpp.o -c /home/llf/Desktop/ILSQN-New/vector.cpp",
+  "file": "/home/llf/Desktop/ILSQN-New/vector.cpp"
+}
+]

@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 100.0
+piecePath = ../data/Blaz.txt
+nfpsPath = ../nfpsCache/Blaz.csv
+ifpsPath = ../ifpsCache/Blaz.csv
+resultPath = ../result/Blaz.svg
+maxRunTime = 1200
+maxIteration = 100
+orientations = 2
+inc = 0.01
+dec = 0.04

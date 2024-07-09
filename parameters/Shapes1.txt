@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 100.0
+piecePath = ../data/Shapes1.txt
+nfpsPath = ../nfpsCache/Shapes1.csv
+ifpsPath = ../ifpsCache/Shapes1.csv
+resultPath = ../result/Shapes1.svg
+maxRunTime = 1200
+maxIteration = 100
+orientations = 2
+inc = 0.01
+dec = 0.04

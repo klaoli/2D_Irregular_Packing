@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 100.0
+piecePath = ../data/Dighe1.txt
+nfpsPath = ../nfpsCache/Dighe1.csv
+ifpsPath = ../ifpsCache/Dighe1.csv
+resultPath = ../result/Dighe1.svg
+maxRunTime = 600
+maxIteration = 100
+orientations = 1
+inc = 0.01
+dec = 0.04

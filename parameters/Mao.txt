@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 1.0
+piecePath = ../data/Mao.txt
+nfpsPath = ../nfpsCache/Mao.csv
+ifpsPath = ../ifpsCache/Mao.csv
+resultPath = ../result/Mao.svg
+maxRunTime = 1200
+maxIteration = 100
+orientations = 4
+inc = 0.01
+dec = 0.04

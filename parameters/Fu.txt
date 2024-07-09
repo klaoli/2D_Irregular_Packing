@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 100.0
+piecePath = ../data/Fu.txt
+nfpsPath = ../nfpsCache/Fu.csv
+ifpsPath = ../ifpsCache/Fu.csv
+resultPath = ../result/Fu.svg
+maxRunTime = 600
+maxIteration = 100
+orientations = 4
+inc = 0.01
+dec = 0.04

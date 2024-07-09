@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 1.0
+piecePath = ../data/Swim.txt
+nfpsPath = ../nfpsCache/Swim.csv
+ifpsPath = ../ifpsCache/Swim.csv
+resultPath = ../result/Swim.svg
+maxRunTime = 1200
+maxIteration = 100
+orientations = 2
+inc = 0.01
+dec = 0.04

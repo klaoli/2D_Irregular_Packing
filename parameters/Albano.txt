@@ -1,0 +1,11 @@
+minGap = 0
+polygonScaleRate = 1.0
+piecePath = ../data/Albano.txt
+nfpsPath = ../nfpsCache/Albano.csv
+ifpsPath = ../ifpsCache/Albano.csv
+resultPath = ../result/Albano.svg
+maxRunTime = 1200
+maxIteration = 100
+orientations = 2
+inc = 0.01
+dec = 0.04
