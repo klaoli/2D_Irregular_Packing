@@ -7,6 +7,7 @@
 
 参考：<br>
   lbfgs.hpp: https://github.com/ZJU-FAST-Lab/LBFGS-Lite<br>
+  libnfporb: https://github.com/kallaballa/libnfporb<br>
   ClipperLib: https://github.com/AngusJohnson/Clipper2/tree/main/CPP<br>
   ClothCutting: https://github.com/zjl9959/ClothCutting<br>
   
