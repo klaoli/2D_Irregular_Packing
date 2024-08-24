@@ -254,7 +254,6 @@ double ILSQN::seperate(const int N, double currentOverlap) {
 }
 
 void ILSQN::movePolygon(int idx) {
-	std::vector<Piece> vecPieces(parameters.orientations);
 	std::vector<Vector> vecVectors(parameters.orientations);
 	std::vector<double> overlaps(parameters.orientations, parameters.MAXDOUBLE);
 
@@ -316,6 +315,14 @@ int ILSQN::generateRandomNumber(int n) {
 	return distribution(rng);
 }
 
+double ILSQN::generateRandomDouble(double min, double max) {
+    std::random_device rd; // 随机数种子，仅用于种子生成
+    std::mt19937 gen(rd()); // Mersenne Twister 生成器
+    std::uniform_real_distribution<double> dis(min, max); // 均匀分布
+
+    return dis(gen); // 返回生成的随机数
+}
+
 void ILSQN::minimizeOverlap() {
 	double totalOverlap = getTotalOverlap();	// ��ǰ�����ܵ��ص���
 	// std::cout << "TotalOverlap = " << totalOverlap << std::endl;
@@ -327,8 +334,15 @@ void ILSQN::minimizeOverlap() {
 		while (i == j) {
 			j = generateRandomNumber(numPieces);  
 		}
-		swapPolygons(i, j);
+		if(generateRandomDouble(0, 1) > 0.5) {
+			swapPolygons(i, j);
+		}
+		else {
+			movePolygon(i);
+		}
+		
 		double tempTotalOverlap = seperate(numPieces * 2, totalOverlap);
+
 		if (tempTotalOverlap < totalOverlap) {
 			totalOverlap = tempTotalOverlap;
 			currentPieces[i] = lbfgsPieces[i];
@@ -342,6 +356,7 @@ void ILSQN::minimizeOverlap() {
 			lbfgsVectors[i] = currentVectors[i];
 			lbfgsVectors[j] = currentVectors[j];
 		}
+
 		if (totalOverlap < eps) {
 			feasible = true;
 			break;

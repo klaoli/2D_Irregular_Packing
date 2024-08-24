@@ -24,6 +24,8 @@ namespace MyNest {
 		static double costGlsFunction(void* instance, const Eigen::VectorXd &x, Eigen::VectorXd &g);
 
 		inline int generateRandomNumber(int n);
+		// 生成指定范围内的随机双精度浮点数
+		inline double generateRandomDouble(double min, double max);
 		double getTotalOverlap();		// ��ȡ��ǰ���ֵ��ܵ��ص���
 		double getOneTotalOverlap(Piece &piece, Vector &vec);	// ��ȡһ���������������������ص���
 		double getIniaialSolution();	// ����һ����ʼ��
