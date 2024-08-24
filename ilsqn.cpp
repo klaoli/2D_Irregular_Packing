@@ -15,7 +15,7 @@ using Eigen::VectorXd;
 ILSQN* ILSQN::ilsqn = nullptr;
 std::vector<Piece> ILSQN::lbfgsPieces;
 std::vector<Vector> ILSQN::lbfgsVectors;
-std::vector<std::vector<double>> ILSQN::miuMatrix;
+// std::vector<std::vector<double>> ILSQN::miuMatrix;
 
 ILSQN::ILSQN(double _inc, double _dec) {
 	inc = _inc;
@@ -24,8 +24,8 @@ ILSQN::ILSQN(double _inc, double _dec) {
 	for (auto& piece : pieces) {
 		allPiecesArea += piece.area;
 	}
-	miuMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,1));
-	overlapMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,0));
+	// miuMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,1));
+	// overlapMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,0));
 }
 
 ILSQN* ILSQN::getInstance() {
@@ -324,7 +324,7 @@ double ILSQN::generateRandomDouble(double min, double max) {
 }
 
 void ILSQN::minimizeOverlap() {
-	double totalOverlap = getTotalOverlap();	// ��ǰ�����ܵ��ص���
+	double totalOverlap = getTotalOverlap();	// 计算当前布局总的重叠量
 	// std::cout << "TotalOverlap = " << totalOverlap << std::endl;
 	int iter = 0;
 	while (iter++ < parameters.maxIteration) {
@@ -377,7 +377,7 @@ double ILSQN::getIniaialSolution() {
 }
 
 void ILSQN::run() { 
-	currentLength = getIniaialSolution();	// ���ɳ�ʼ���н�
+	currentLength = getIniaialSolution();	// 生成初始布局
 	currentBin.max_corner().set<0>(currentLength);
 	std::cout << "初始利用率为 = " << allPiecesArea / bg::area(currentBin) << std::endl;
 
@@ -440,212 +440,212 @@ void ILSQN::run() {
 	std::cout << "达到最大搜索时间，最好利用率 = " << allPiecesArea / bg::area(bestBin) << std::endl;
 }
 
-void ILSQN::moveGlsPolygon(int idx) {
-	std::vector<Vector> vecVectors(parameters.orientations);
-	std::vector<double> glsOverlaps(parameters.orientations, parameters.MAXDOUBLE);
+// void ILSQN::moveGlsPolygon(int idx) {
+// 	std::vector<Vector> vecVectors(parameters.orientations);
+// 	std::vector<double> glsOverlaps(parameters.orientations, parameters.MAXDOUBLE);
 
-#pragma omp parallel for num_threads(parameters.orientations)
-	for (int k = 0; k < parameters.orientations; ++k) {
-		Piece &piece = piecesCache[k][idx];
-		std::vector<polygon_t> nfps;
-		std::string key = getIfrKey(piece);
-		nfps.push_back(ifpsCache[key]);
-		for (int i = 0; i < lbfgsPieces.size(); ++i) {
-			std::string key = getNfpKey(lbfgsPieces[i], piece);
-			const polygon_t &nfp = nfpsCache[key];
-			polygon_t transNfp;
-			bg::strategy::transform::translate_transformer<double, 2, 2> translate(lbfgsVectors[i].x, lbfgsVectors[i].y);
-			bg::transform(nfp, transNfp, translate);
-			nfps.push_back(transNfp);
-		}
+// #pragma omp parallel for num_threads(parameters.orientations)
+// 	for (int k = 0; k < parameters.orientations; ++k) {
+// 		Piece &piece = piecesCache[k][idx];
+// 		std::vector<polygon_t> nfps;
+// 		std::string key = getIfrKey(piece);
+// 		nfps.push_back(ifpsCache[key]);
+// 		for (int i = 0; i < lbfgsPieces.size(); ++i) {
+// 			std::string key = getNfpKey(lbfgsPieces[i], piece);
+// 			const polygon_t &nfp = nfpsCache[key];
+// 			polygon_t transNfp;
+// 			bg::strategy::transform::translate_transformer<double, 2, 2> translate(lbfgsVectors[i].x, lbfgsVectors[i].y);
+// 			bg::transform(nfp, transNfp, translate);
+// 			nfps.push_back(transNfp);
+// 		}
 
-		std::vector<point_t> middlePoints;
-		for (int i = 0; i < nfps.size(); ++i) {
-			for (int j = 0; j < nfps[i].outer().size() - 1; ++j) {
-				Vector vec(nfps[i].outer()[j].x(), nfps[i].outer()[j].y());
-				// double overlap = getOneTotalOverlap(piece, vec);
-				double glsOverlap = getGlsOneOverlap(piece, vec, idx);
-				if (glsOverlap < glsOverlaps[k]) {
-					glsOverlaps[k] = glsOverlap;
-					vecVectors[k] = vec;
-				}
-				point_t p(
-					(nfps[i].outer()[j].x() + nfps[i].outer()[j + 1].x()) / 2,
-					(nfps[i].outer()[j].y() + nfps[i].outer()[j + 1].y()) / 2);
-				middlePoints.push_back(p);
-			}
-		}
-		for (int i = 0; i < middlePoints.size(); ++i) {
-			Vector vec(middlePoints[i].x(), middlePoints[i].y());
-			// double overlap = getOneTotalOverlap(piece, vec);
-			double glsOverlap = getGlsOneOverlap(piece, vec, idx);
-			if (glsOverlap < glsOverlaps[k]) {
-				glsOverlaps[k] = glsOverlap;
-				vecVectors[k] = vec;
-			}
-		}
-	}
-	int index = std::min_element(glsOverlaps.begin(), glsOverlaps.end()) - glsOverlaps.begin();
-	lbfgsPieces[idx] = piecesCache[index][idx];
-	lbfgsVectors[idx] = vecVectors[index];
-}
+// 		std::vector<point_t> middlePoints;
+// 		for (int i = 0; i < nfps.size(); ++i) {
+// 			for (int j = 0; j < nfps[i].outer().size() - 1; ++j) {
+// 				Vector vec(nfps[i].outer()[j].x(), nfps[i].outer()[j].y());
+// 				// double overlap = getOneTotalOverlap(piece, vec);
+// 				double glsOverlap = getGlsOneOverlap(piece, vec, idx);
+// 				if (glsOverlap < glsOverlaps[k]) {
+// 					glsOverlaps[k] = glsOverlap;
+// 					vecVectors[k] = vec;
+// 				}
+// 				point_t p(
+// 					(nfps[i].outer()[j].x() + nfps[i].outer()[j + 1].x()) / 2,
+// 					(nfps[i].outer()[j].y() + nfps[i].outer()[j + 1].y()) / 2);
+// 				middlePoints.push_back(p);
+// 			}
+// 		}
+// 		for (int i = 0; i < middlePoints.size(); ++i) {
+// 			Vector vec(middlePoints[i].x(), middlePoints[i].y());
+// 			// double overlap = getOneTotalOverlap(piece, vec);
+// 			double glsOverlap = getGlsOneOverlap(piece, vec, idx);
+// 			if (glsOverlap < glsOverlaps[k]) {
+// 				glsOverlaps[k] = glsOverlap;
+// 				vecVectors[k] = vec;
+// 			}
+// 		}
+// 	}
+// 	int index = std::min_element(glsOverlaps.begin(), glsOverlaps.end()) - glsOverlaps.begin();
+// 	lbfgsPieces[idx] = piecesCache[index][idx];
+// 	lbfgsVectors[idx] = vecVectors[index];
+// }
 
-double ILSQN::costGlsFunction(void* instance, const Eigen::VectorXd &x, Eigen::VectorXd &grad) {
-	double ret = 0.0;
-	static int numPieces = x.size() / 2;
-	static std::vector<Vector> vectors(numPieces);
+// double ILSQN::costGlsFunction(void* instance, const Eigen::VectorXd &x, Eigen::VectorXd &grad) {
+// 	double ret = 0.0;
+// 	static int numPieces = x.size() / 2;
+// 	static std::vector<Vector> vectors(numPieces);
 
-	for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
-		vectors[j].x = x(i);
-		vectors[j].y = x(i + 1);
-	}
-	grad = VectorXd::Zero(x.size());
-	Vector seperateVec;
-	for (int i = 0; i < numPieces; ++i) {
-		ret += (getPenetrationDepth(lbfgsPieces[i], vectors[i], seperateVec) * miuMatrix[i+1][0]);
-		grad[2 * i] += ((-2 * seperateVec.x) * miuMatrix[i+1][0]);
-		grad[2 * i + 1] += (-2 * seperateVec.y * miuMatrix[i+1][0]);
+// 	for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
+// 		vectors[j].x = x(i);
+// 		vectors[j].y = x(i + 1);
+// 	}
+// 	grad = VectorXd::Zero(x.size());
+// 	Vector seperateVec;
+// 	for (int i = 0; i < numPieces; ++i) {
+// 		ret += (getPenetrationDepth(lbfgsPieces[i], vectors[i], seperateVec) * miuMatrix[i+1][0]);
+// 		grad[2 * i] += ((-2 * seperateVec.x) * miuMatrix[i+1][0]);
+// 		grad[2 * i + 1] += (-2 * seperateVec.y * miuMatrix[i+1][0]);
 
-		for (int j = i + 1; j < numPieces; ++j) {
-			ret += (getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vectors[j], vectors[i], seperateVec) * miuMatrix[j+1][i+1]);
-			grad[2 * i] += (-2 * seperateVec.x)  * miuMatrix[j+1][i+1];
-			grad[2 * i + 1] += (-2 * seperateVec.y) * miuMatrix[j+1][i+1];
-			grad[2 * j] += (2 * seperateVec.x) * miuMatrix[j+1][i+1];
-			grad[2 * j + 1] += (2 * seperateVec.y) * miuMatrix[j+1][i+1];
-		}
-	}
-	return ret;
-}
+// 		for (int j = i + 1; j < numPieces; ++j) {
+// 			ret += (getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vectors[j], vectors[i], seperateVec) * miuMatrix[j+1][i+1]);
+// 			grad[2 * i] += (-2 * seperateVec.x)  * miuMatrix[j+1][i+1];
+// 			grad[2 * i + 1] += (-2 * seperateVec.y) * miuMatrix[j+1][i+1];
+// 			grad[2 * j] += (2 * seperateVec.x) * miuMatrix[j+1][i+1];
+// 			grad[2 * j + 1] += (2 * seperateVec.y) * miuMatrix[j+1][i+1];
+// 		}
+// 	}
+// 	return ret;
+// }
 
-double ILSQN::seperateGls(const int N, double currentOverlap) {
-	double finalCost;
-	Eigen::VectorXd x(N);
+// double ILSQN::seperateGls(const int N, double currentOverlap) {
+// 	double finalCost;
+// 	Eigen::VectorXd x(N);
 
-	/* Set the initial guess */
-	for (int i = 0, j = 0; i < N; i += 2, j++) {
-		x(i) = lbfgsVectors[j].x;
-		x(i + 1) = lbfgsVectors[j].y;
-	}
+// 	/* Set the initial guess */
+// 	for (int i = 0, j = 0; i < N; i += 2, j++) {
+// 		x(i) = lbfgsVectors[j].x;
+// 		x(i + 1) = lbfgsVectors[j].y;
+// 	}
 
-	/* Set the minimization parameters */
-	lbfgs::lbfgs_parameter_t params;
-	params.g_epsilon = 1.0e-8;
-	params.past = 6;
-	params.delta = 1.0e-8;
+// 	/* Set the minimization parameters */
+// 	lbfgs::lbfgs_parameter_t params;
+// 	params.g_epsilon = 1.0e-8;
+// 	params.past = 6;
+// 	params.delta = 1.0e-8;
 
-	/* Start minimization */
-	int ret = lbfgs::lbfgs_optimize(x,
-		finalCost,
-		costGlsFunction,
-		nullptr,
-		nullptr,
-		this,
-		params);
+// 	/* Start minimization */
+// 	int ret = lbfgs::lbfgs_optimize(x,
+// 		finalCost,
+// 		costGlsFunction,
+// 		nullptr,
+// 		nullptr,
+// 		this,
+// 		params);
 
-	if (currentOverlap > finalCost) {
-		for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
-			lbfgsVectors[j].x = x(i);
-			lbfgsVectors[j].y = x(i + 1);
-		}
-	}
-	return finalCost;
-}
+// 	if (currentOverlap > finalCost) {
+// 		for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
+// 			lbfgsVectors[j].x = x(i);
+// 			lbfgsVectors[j].y = x(i + 1);
+// 		}
+// 	}
+// 	return finalCost;
+// }
 
-void ILSQN::minimizeGlsOverlap() {
-	// double totalOverlap = getTotalOverlap();	// ��ǰ�����ܵ��ص���
-	// std::cout << "TotalOverlap = " << totalOverlap << std::endl;
-	resetMiu();
-	// for(int i = 0;i < miuMatrix.size();++i){
-	// 	for(int j = 0;j<miuMatrix.size();++j) {
-	// 		std::cout << miuMatrix[i][j] <<",";
-	// 	}
-	// 	std::cout<<std::endl;
-	// }
-	double glsTotalOverlap = getGlsTotalOverlap();
-	// std::cout << "glsTotalOverlap = " << glsTotalOverlap << std::endl;
+// void ILSQN::minimizeGlsOverlap() {
+// 	// double totalOverlap = getTotalOverlap();	// ��ǰ�����ܵ��ص���
+// 	// std::cout << "TotalOverlap = " << totalOverlap << std::endl;
+// 	resetMiu();
+// 	// for(int i = 0;i < miuMatrix.size();++i){
+// 	// 	for(int j = 0;j<miuMatrix.size();++j) {
+// 	// 		std::cout << miuMatrix[i][j] <<",";
+// 	// 	}
+// 	// 	std::cout<<std::endl;
+// 	// }
+// 	double glsTotalOverlap = getGlsTotalOverlap();
+// 	// std::cout << "glsTotalOverlap = " << glsTotalOverlap << std::endl;
 	
-	int iter = 0;
-	while (iter++ < parameters.maxIteration) {
-		int i = generateRandomNumber(numPieces),
-			j = generateRandomNumber(numPieces);
+// 	int iter = 0;
+// 	while (iter++ < parameters.maxIteration) {
+// 		int i = generateRandomNumber(numPieces),
+// 			j = generateRandomNumber(numPieces);
 
-		while (i == j) {
-			j = generateRandomNumber(numPieces);  
-		}
-		swapPolygons(i, j);
-		double tempGlsTotalOverlap = seperateGls(numPieces * 2, glsTotalOverlap);
-		// std::cout << "tempGlsTotalOverlap = " << glsTotalOverlap << std::endl;
+// 		while (i == j) {
+// 			j = generateRandomNumber(numPieces);  
+// 		}
+// 		swapPolygons(i, j);
+// 		double tempGlsTotalOverlap = seperateGls(numPieces * 2, glsTotalOverlap);
+// 		// std::cout << "tempGlsTotalOverlap = " << glsTotalOverlap << std::endl;
 		
-		if (tempGlsTotalOverlap < glsTotalOverlap) {
-			glsTotalOverlap = tempGlsTotalOverlap;
-			currentPieces[i] = lbfgsPieces[i];
-			currentPieces[j] = lbfgsPieces[j];
-			currentVectors = lbfgsVectors;
-			iter = 0;
-		}
-		else {
-			lbfgsPieces[i] = currentPieces[i];
-			lbfgsPieces[j] = currentPieces[j];
-			lbfgsVectors[i] = currentVectors[i];
-			lbfgsVectors[j] = currentVectors[j];
-		}
+// 		if (tempGlsTotalOverlap < glsTotalOverlap) {
+// 			glsTotalOverlap = tempGlsTotalOverlap;
+// 			currentPieces[i] = lbfgsPieces[i];
+// 			currentPieces[j] = lbfgsPieces[j];
+// 			currentVectors = lbfgsVectors;
+// 			iter = 0;
+// 		}
+// 		else {
+// 			lbfgsPieces[i] = currentPieces[i];
+// 			lbfgsPieces[j] = currentPieces[j];
+// 			lbfgsVectors[i] = currentVectors[i];
+// 			lbfgsVectors[j] = currentVectors[j];
+// 		}
 
-		if (glsTotalOverlap < eps) {
-			feasible = true;
-			break;
-		}
-		// update miuMatrix
-		double maxOverlap = getMaxOverlap();
-		updateMiu(maxOverlap);
-		// for(int i = 0;i < miuMatrix.size();++i){
-		// 	for(int j = 0;j<miuMatrix.size();++j) {
-		// 		std::cout << miuMatrix[i][j] <<",";
-		// 	}
-		// 	std::cout<<std::endl;
-		// }
-	}
-}
+// 		if (glsTotalOverlap < eps) {
+// 			feasible = true;
+// 			break;
+// 		}
+// 		// update miuMatrix
+// 		double maxOverlap = getMaxOverlap();
+// 		updateMiu(maxOverlap);
+// 		// for(int i = 0;i < miuMatrix.size();++i){
+// 		// 	for(int j = 0;j<miuMatrix.size();++j) {
+// 		// 		std::cout << miuMatrix[i][j] <<",";
+// 		// 	}
+// 		// 	std::cout<<std::endl;
+// 		// }
+// 	}
+// }
 
-void ILSQN::resetMiu() {
-	// 将所有元素设置为1
-    for (int i = 0; i < miuMatrix.size(); ++i) {
-        for (int j = 0; j < miuMatrix[i].size(); ++j) {
-            miuMatrix[i][j] = 1.0;
-        }
-    }
-}
+// void ILSQN::resetMiu() {
+// 	// 将所有元素设置为1
+//     for (int i = 0; i < miuMatrix.size(); ++i) {
+//         for (int j = 0; j < miuMatrix[i].size(); ++j) {
+//             miuMatrix[i][j] = 1.0;
+//         }
+//     }
+// }
 
-void ILSQN::updateMiu(double maxOverlap) {
-	for (int i = 1; i < miuMatrix.size(); ++i) {
-		miuMatrix[i][0] = miuMatrix[0][i] = (overlapMatrix[i][0] / maxOverlap + miuMatrix[i][0]);
-		for (int j = 1; j < i; ++j) {
-			miuMatrix[i][j] = miuMatrix[j][i] = (overlapMatrix[i][j] / maxOverlap + miuMatrix[i][j]);
-		}
-	}
-}
+// void ILSQN::updateMiu(double maxOverlap) {
+// 	for (int i = 1; i < miuMatrix.size(); ++i) {
+// 		miuMatrix[i][0] = miuMatrix[0][i] = (overlapMatrix[i][0] / maxOverlap + miuMatrix[i][0]);
+// 		for (int j = 1; j < i; ++j) {
+// 			miuMatrix[i][j] = miuMatrix[j][i] = (overlapMatrix[i][j] / maxOverlap + miuMatrix[i][j]);
+// 		}
+// 	}
+// }
 
-double ILSQN::getGlsOneOverlap(Piece &piece, Vector &vec, int idx) {
-	double ret = 0;
-	int j = idx+1;
-	ret += miuMatrix[0][j] * getPenetrationDepth(piece, vec);
-	for (int i = 0; i < currentPieces.size(); ++i) {
-		ret += miuMatrix[i + 1][j] * getPenetrationDepth(currentPieces[i], piece, currentVectors[i], vec);	
-	}
-	return ret;
-}
+// double ILSQN::getGlsOneOverlap(Piece &piece, Vector &vec, int idx) {
+// 	double ret = 0;
+// 	int j = idx+1;
+// 	ret += miuMatrix[0][j] * getPenetrationDepth(piece, vec);
+// 	for (int i = 0; i < currentPieces.size(); ++i) {
+// 		ret += miuMatrix[i + 1][j] * getPenetrationDepth(currentPieces[i], piece, currentVectors[i], vec);	
+// 	}
+// 	return ret;
+// }
 
-double ILSQN::getGlsTotalOverlap() {
-	double ret = 0;
-	for (int i = 0; i < currentPieces.size(); ++i) {
-		ret += miuMatrix[i + 1][0] * (getPenetrationDepth(currentPieces[i], currentVectors[i]));
-		for (int j = i+1; j < currentPieces.size(); ++j) {
-			ret += miuMatrix[i + 1][j + 1] * getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
-		}
-	}
-	return ret;
-}
+// double ILSQN::getGlsTotalOverlap() {
+// 	double ret = 0;
+// 	for (int i = 0; i < currentPieces.size(); ++i) {
+// 		ret += miuMatrix[i + 1][0] * (getPenetrationDepth(currentPieces[i], currentVectors[i]));
+// 		for (int j = i+1; j < currentPieces.size(); ++j) {
+// 			ret += miuMatrix[i + 1][j + 1] * getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
+// 		}
+// 	}
+// 	return ret;
+// }
 
-double ILSQN::getMaxOverlap() {		// �����������ֵ��ص���
+// double ILSQN::getMaxOverlap() {		// �����������ֵ��ص���
 	double ret = 0.0;
 	double temp;
 	for (int i = 0; i < currentPieces.size(); ++i) {

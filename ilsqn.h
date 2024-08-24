@@ -62,22 +62,16 @@ namespace MyNest {
 
 
 	public:
-		static std::vector<std::vector<double>> miuMatrix;
-		std::vector<std::vector<double>> overlapMatrix;
-		void resetMiu();
-		void updateMiu(double maxOverlap);
-		double getGlsOneOverlap(Piece &piece, Vector &vec, int idx);
-		double getGlsTotalOverlap();
-		void moveGlsPolygon(int idx);
-		void minimizeGlsOverlap(); 
-		double seperateGls(const int N, double currentOverlap);
-		double getMaxOverlap();
-		
-
-
-
-
-
+		// static std::vector<std::vector<double>> miuMatrix;
+		// std::vector<std::vector<double>> overlapMatrix;
+		// void resetMiu();
+		// void updateMiu(double maxOverlap);
+		// double getGlsOneOverlap(Piece &piece, Vector &vec, int idx);
+		// double getGlsTotalOverlap();
+		// void moveGlsPolygon(int idx);
+		// void minimizeGlsOverlap(); 
+		// double seperateGls(const int N, double currentOverlap);
+		// double getMaxOverlap();
 	};
 }
 
