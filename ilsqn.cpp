@@ -11,37 +11,43 @@
 
 using namespace MyNest;
 using Eigen::VectorXd;
-   
-ILSQN* ILSQN::ilsqn = nullptr;
+
+ILSQN *ILSQN::ilsqn = nullptr;
 std::vector<Piece> ILSQN::lbfgsPieces;
 std::vector<Vector> ILSQN::lbfgsVectors;
 // std::vector<std::vector<double>> ILSQN::miuMatrix;
 
-ILSQN::ILSQN(double _inc, double _dec) {
+ILSQN::ILSQN(double _inc, double _dec)
+{
 	inc = _inc;
 	dec = _dec;
 	numPieces = pieces.size();
-	for (auto& piece : pieces) {
+	for (auto &piece : pieces)
+	{
 		allPiecesArea += piece.area;
 	}
 	// miuMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,1));
 	// overlapMatrix.resize(numPieces+1, std::vector<double>(numPieces+1,0));
 }
 
-ILSQN* ILSQN::getInstance() {
+ILSQN *ILSQN::getInstance()
+{
 
-	if (ilsqn == nullptr) {
+	if (ilsqn == nullptr)
+	{
 		ilsqn = new ILSQN(parameters.inc, parameters.dec);
 	}
 	return ilsqn;
 }
 
-inline bool boxIsOverlap(box_t &b1, box_t &b2) {
+inline bool boxIsOverlap(box_t &b1, box_t &b2)
+{
 	return (std::min(b1.max_corner().x(), b2.max_corner().x()) > std::max(b1.min_corner().x(), b2.min_corner().x()) &&
-		std::min(b1.max_corner().y(), b2.max_corner().y()) > std::max(b1.min_corner().y(), b2.min_corner().y()));
+			std::min(b1.max_corner().y(), b2.max_corner().y()) > std::max(b1.min_corner().y(), b2.min_corner().y()));
 }
 
-inline Vector shortestTranslationVector(point_t &p, segment_t &s) {
+inline Vector shortestTranslationVector(point_t &p, segment_t &s)
+{
 	Vector p1(s.first.x(), s.first.y());
 	Vector p2(s.second.x(), s.second.y());
 	Vector p0(p.x(), p.y());
@@ -50,12 +56,14 @@ inline Vector shortestTranslationVector(point_t &p, segment_t &s) {
 	Vector w = p0 - p1; // ��p1����p������
 
 	double c1 = w * v; // ��p�ڷ�������v�ϵ�ͶӰ����
-	if (c1 <= 0) {
-		return p1 - p0;	// ͶӰ����p1֮ǰ���������p1
+	if (c1 <= 0)
+	{
+		return p1 - p0; // ͶӰ����p1֮ǰ���������p1
 	}
 
 	double c2 = v * v; // ��������v�ĳ���ƽ��
-	if (c2 <= c1) {
+	if (c2 <= c1)
+	{
 		return p2 - p0; // ͶӰ����p2֮���������p2
 	}
 
@@ -66,7 +74,8 @@ inline Vector shortestTranslationVector(point_t &p, segment_t &s) {
 }
 
 // ����㵽���ε���̾���
-inline double pointToRectangleDistance(const point_t& p, const box_t& rect) {
+inline double pointToRectangleDistance(const point_t &p, const box_t &rect)
+{
 	double dx = std::max(rect.min_corner().x() - p.x(), 0.0);
 	dx = std::max(dx, p.x() - rect.max_corner().x());
 
@@ -76,28 +85,33 @@ inline double pointToRectangleDistance(const point_t& p, const box_t& rect) {
 	return dx > 0 || dy > 0 ? dx * dx + dy * dy : 0.0;
 }
 
-// 
-double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2){
+//
+double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2)
+{
 	double overlap = 0.0;
 	box_t box1(point_t(p1.bounding.min_corner().x() + v1.x, p1.bounding.min_corner().y() + v1.y),
-				point_t(p1.bounding.max_corner().x() + v1.x, p1.bounding.max_corner().y() + v1.y));
-	box_t box2(point_t(p2.bounding.min_corner().x() + v2.x, p2.bounding.min_corner().y() + v2.y), 
-				point_t(p2.bounding.max_corner().x() + v2.x, p2.bounding.max_corner().y() + v2.y));
-	
-	if (boxIsOverlap(box1, box2)) {    //�ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
+			   point_t(p1.bounding.max_corner().x() + v1.x, p1.bounding.max_corner().y() + v1.y));
+	box_t box2(point_t(p2.bounding.min_corner().x() + v2.x, p2.bounding.min_corner().y() + v2.y),
+			   point_t(p2.bounding.max_corner().x() + v2.x, p2.bounding.max_corner().y() + v2.y));
+
+	if (boxIsOverlap(box1, box2))
+	{ // �ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
 		std::string key = getNfpKey(p1, p2);
 		polygon_t nfp = nfpsCache[key];
-		point_t referPoint(v2.x - v1.x, v2.y - v1.y);	// v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
+		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
 
-		if (bg::within(referPoint, nfp)) {
+		if (bg::within(referPoint, nfp))
+		{
 			double distance = Parameters::MAXDOUBLE;
 
-			for (int i = 0; i < nfp.outer().size() - 1; ++i) {
+			for (int i = 0; i < nfp.outer().size() - 1; ++i)
+			{
 				double tempDistance;
 				segment_t segment(nfp.outer()[i], nfp.outer()[i + 1]);
 				Vector tempVector = shortestTranslationVector(referPoint, segment);
 				tempDistance = tempVector * tempVector;
-				if (tempDistance < distance) {
+				if (tempDistance < distance)
+				{
 					distance = tempDistance;
 				}
 			}
@@ -107,36 +121,42 @@ double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2){
 	return overlap;
 }
 
-double ILSQN::getPenetrationDepth(Piece &p, Vector &vec) {
+double ILSQN::getPenetrationDepth(Piece &p, Vector &vec)
+{
 	std::string key = getIfrKey(p);
 	box_t ifr = ifrsCache[key];
 	point_t referPoint(vec.x, vec.y);
 	return pointToRectangleDistance(referPoint, ifr);
 }
 
-double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, Vector &seperateVector) {
+double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, Vector &seperateVector)
+{
 	double overlap = 0.0;
 	box_t box1(point_t(p1.bounding.min_corner().x() + v1.x, p1.bounding.min_corner().y() + v1.y),
 			   point_t(p1.bounding.max_corner().x() + v1.x, p1.bounding.max_corner().y() + v1.y));
 	box_t box2(point_t(p2.bounding.min_corner().x() + v2.x, p2.bounding.min_corner().y() + v2.y),
 			   point_t(p2.bounding.max_corner().x() + v2.x, p2.bounding.max_corner().y() + v2.y));
-	
-	if (boxIsOverlap(box1, box2)) {    // �ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
+
+	if (boxIsOverlap(box1, box2))
+	{ // �ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
 		std::string key = getNfpKey(p1, p2);
 		polygon_t nfp = nfpsCache[key];
-		point_t referPoint(v2.x - v1.x, v2.y - v1.y);	// v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
+		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
 
-		if (bg::within(referPoint, nfp)) {
+		if (bg::within(referPoint, nfp))
+		{
 			double distance = Parameters::MAXDOUBLE;
 
-			for (int i = 0; i < nfp.outer().size() - 1; ++i) {
+			for (int i = 0; i < nfp.outer().size() - 1; ++i)
+			{
 				double tempDistance;
 				segment_t segment(nfp.outer()[i], nfp.outer()[i + 1]);
 				Vector tempVector = shortestTranslationVector(referPoint, segment);
 				tempDistance = tempVector * tempVector;
-				if (tempDistance < distance) {
+				if (tempDistance < distance)
+				{
 					distance = tempDistance;
-					 seperateVector = tempVector;
+					seperateVector = tempVector;
 				}
 			}
 			return distance;
@@ -146,24 +166,28 @@ double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, 
 	return overlap;
 }
 
-double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector) {
+double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector)
+{
 	std::string key = getIfrKey(p);
 	box_t ifr = ifrsCache[key];
 	polygon_t ifp = ifpsCache[key];
 	point_t referPoint(v.x, v.y);
 	// ������ھ����ڲ�������������
 	if (referPoint.x() >= ifr.min_corner().x() && referPoint.x() <= ifr.max_corner().x() &&
-		referPoint.y() >= ifr.min_corner().y() && referPoint.y() <= ifr.max_corner().y()) {
+		referPoint.y() >= ifr.min_corner().y() && referPoint.y() <= ifr.max_corner().y())
+	{
 		seperateVector.x = 0, seperateVector.y = 0;
 		return 0.0;
 	}
 	double minDistanceSquared = Parameters::MAXDOUBLE;
 	// �������ε�ÿһ���ߣ��ҵ���̵�ƽ������
-	for (int i = 0; i < ifp.outer().size() - 1; ++i) {   
-		segment_t segment(ifp.outer()[i], ifp.outer()[i+1]);
+	for (int i = 0; i < ifp.outer().size() - 1; ++i)
+	{
+		segment_t segment(ifp.outer()[i], ifp.outer()[i + 1]);
 		Vector translation = shortestTranslationVector(referPoint, segment);
 		double distanceSquared = translation * translation;
-		if (distanceSquared < minDistanceSquared) {
+		if (distanceSquared < minDistanceSquared)
+		{
 			minDistanceSquared = distanceSquared;
 			seperateVector = translation;
 		}
@@ -171,44 +195,53 @@ double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector) {
 	return minDistanceSquared;
 }
 
-double ILSQN::getTotalOverlap() {		// �����������ֵ��ص���
+double ILSQN::getTotalOverlap()
+{ // �����������ֵ��ص���
 	double ret = 0.0;
-	for (int i = 0; i < currentPieces.size(); ++i) {
+	for (int i = 0; i < currentPieces.size(); ++i)
+	{
 		ret += getPenetrationDepth(currentPieces[i], currentVectors[i]);
 
-		for (int j = i + 1; j < currentPieces.size(); ++j) {
+		for (int j = i + 1; j < currentPieces.size(); ++j)
+		{
 			ret += getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
 		}
 	}
 	return ret;
 }
 
-double ILSQN::getOneTotalOverlap(Piece &piece, Vector &vec) {
+double ILSQN::getOneTotalOverlap(Piece &piece, Vector &vec)
+{
 	double ret = 0.0;
 	ret += getPenetrationDepth(piece, vec);
-	for (int i = 0; i < lbfgsPieces.size(); ++i) {
+	for (int i = 0; i < lbfgsPieces.size(); ++i)
+	{
 		ret += getPenetrationDepth(lbfgsPieces[i], piece, lbfgsVectors[i], vec);
 	}
 	return ret;
 }
 
-double ILSQN::costFunction(void* instance, const Eigen::VectorXd &x, Eigen::VectorXd &grad) {
+double ILSQN::costFunction(void *instance, const Eigen::VectorXd &x, Eigen::VectorXd &grad)
+{
 	double ret = 0.0;
 	static int numPieces = x.size() / 2;
 	static std::vector<Vector> vectors(numPieces);
 
-	for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
+	for (int i = 0, j = 0; i < x.size(); i += 2, ++j)
+	{
 		vectors[j].x = x(i);
 		vectors[j].y = x(i + 1);
 	}
 	grad = VectorXd::Zero(x.size());
 	Vector seperateVec;
-	for (int i = 0; i < numPieces; ++i) {
+	for (int i = 0; i < numPieces; ++i)
+	{
 		ret += (getPenetrationDepth(lbfgsPieces[i], vectors[i], seperateVec));
 		grad[2 * i] += (-2 * seperateVec.x);
 		grad[2 * i + 1] += (-2 * seperateVec.y);
 
-		for (int j = i + 1; j < numPieces; ++j) {
+		for (int j = i + 1; j < numPieces; ++j)
+		{
 			ret += (getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vectors[j], vectors[i], seperateVec));
 			grad[2 * i] += (-2 * seperateVec.x);
 			grad[2 * i + 1] += (-2 * seperateVec.y);
@@ -219,12 +252,14 @@ double ILSQN::costFunction(void* instance, const Eigen::VectorXd &x, Eigen::Vect
 	return ret;
 }
 
-double ILSQN::seperate(const int N, double currentOverlap) {
+double ILSQN::seperate(const int N, double currentOverlap)
+{
 	double finalCost;
 	Eigen::VectorXd x(N);
 
 	/* Set the initial guess */
-	for (int i = 0, j = 0; i < N; i += 2, j++) {
+	for (int i = 0, j = 0; i < N; i += 2, j++)
+	{
 		x(i) = lbfgsVectors[j].x;
 		x(i + 1) = lbfgsVectors[j].y;
 	}
@@ -237,15 +272,17 @@ double ILSQN::seperate(const int N, double currentOverlap) {
 
 	/* Start minimization */
 	int ret = lbfgs::lbfgs_optimize(x,
-		finalCost,
-		costFunction,
-		nullptr,
-		nullptr,
-		this,
-		params);
+									finalCost,
+									costFunction,
+									nullptr,
+									nullptr,
+									this,
+									params);
 
-	if (currentOverlap > finalCost) {
-		for (int i = 0, j = 0; i < x.size(); i += 2, ++j) {
+	if (currentOverlap > finalCost)
+	{
+		for (int i = 0, j = 0; i < x.size(); i += 2, ++j)
+		{
 			lbfgsVectors[j].x = x(i);
 			lbfgsVectors[j].y = x(i + 1);
 		}
@@ -253,17 +290,20 @@ double ILSQN::seperate(const int N, double currentOverlap) {
 	return finalCost;
 }
 
-void ILSQN::movePolygon(int idx) {
+void ILSQN::movePolygon(int idx)
+{
 	std::vector<Vector> vecVectors(parameters.orientations);
 	std::vector<double> overlaps(parameters.orientations, parameters.MAXDOUBLE);
 
 #pragma omp parallel for num_threads(parameters.orientations)
-	for (int k = 0; k < parameters.orientations; ++k) {
+	for (int k = 0; k < parameters.orientations; ++k)
+	{
 		Piece &piece = piecesCache[k][idx];
 		std::vector<polygon_t> nfps;
 		std::string key = getIfrKey(piece);
 		nfps.push_back(ifpsCache[key]);
-		for (int i = 0; i < lbfgsPieces.size(); ++i) {
+		for (int i = 0; i < lbfgsPieces.size(); ++i)
+		{
 			std::string key = getNfpKey(lbfgsPieces[i], piece);
 			const polygon_t &nfp = nfpsCache[key];
 			polygon_t transNfp;
@@ -273,11 +313,14 @@ void ILSQN::movePolygon(int idx) {
 		}
 
 		std::vector<point_t> middlePoints;
-		for (int i = 0; i < nfps.size(); ++i) {
-			for (int j = 0; j < nfps[i].outer().size() - 1; ++j) {
+		for (int i = 0; i < nfps.size(); ++i)
+		{
+			for (int j = 0; j < nfps[i].outer().size() - 1; ++j)
+			{
 				Vector vec(nfps[i].outer()[j].x(), nfps[i].outer()[j].y());
 				double overlap = getOneTotalOverlap(piece, vec);
-				if (overlap < overlaps[k]) {
+				if (overlap < overlaps[k])
+				{
 					overlaps[k] = overlap;
 					vecVectors[k] = vec;
 				}
@@ -287,10 +330,12 @@ void ILSQN::movePolygon(int idx) {
 				middlePoints.push_back(p);
 			}
 		}
-		for (int i = 0; i < middlePoints.size(); ++i) {
+		for (int i = 0; i < middlePoints.size(); ++i)
+		{
 			Vector vec(middlePoints[i].x(), middlePoints[i].y());
 			double overlap = getOneTotalOverlap(piece, vec);
-			if (overlap < overlaps[k]) {
+			if (overlap < overlaps[k])
+			{
 				overlaps[k] = overlap;
 				vecVectors[k] = vec;
 			}
@@ -301,7 +346,8 @@ void ILSQN::movePolygon(int idx) {
 	lbfgsVectors[idx] = vecVectors[index];
 }
 
-void ILSQN::swapPolygons(int idx1, int idx2) {
+void ILSQN::swapPolygons(int idx1, int idx2)
+{
 	lbfgsVectors[idx2].x = Parameters::MAXDOUBLE, lbfgsVectors[idx2].y = Parameters::MAXDOUBLE;
 	// FindBestPosition(idx1);
 	// FindBestPosition(idx2);
@@ -309,55 +355,59 @@ void ILSQN::swapPolygons(int idx1, int idx2) {
 	movePolygon(idx2);
 }
 
-int ILSQN::generateRandomNumber(int n) {
+int ILSQN::generateRandomNumber(int n)
+{
 	static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
 	std::uniform_int_distribution<int> distribution(0, n - 1);
 	return distribution(rng);
 }
 
-double ILSQN::generateRandomDouble(double min, double max) {
-    std::random_device rd; // 随机数种子，仅用于种子生成
-    std::mt19937 gen(rd()); // Mersenne Twister 生成器
-    std::uniform_real_distribution<double> dis(min, max); // 均匀分布
+double ILSQN::generateRandomDouble(double min, double max)
+{
+	std::random_device rd;								  // 随机数种子，仅用于种子生成
+	std::mt19937 gen(rd());								  // Mersenne Twister 生成器
+	std::uniform_real_distribution<double> dis(min, max); // 均匀分布
 
-    return dis(gen); // 返回生成的随机数
+	return dis(gen); // 返回生成的随机数
 }
 
-void ILSQN::minimizeOverlap() {
-	double totalOverlap = getTotalOverlap();	// 计算当前布局总的重叠量
+void ILSQN::minimizeOverlap()
+{
+	double totalOverlap = getTotalOverlap(); // 计算当前布局总的重叠量
 	// std::cout << "TotalOverlap = " << totalOverlap << std::endl;
 	int iter = 0;
-	while (iter++ < parameters.maxIteration) {
+	while (iter++ < parameters.maxIteration)
+	{
 		int i = generateRandomNumber(numPieces),
 			j = generateRandomNumber(numPieces);
 
-		while (i == j) {
-			j = generateRandomNumber(numPieces);  
+		while (i == j)
+		{
+			j = generateRandomNumber(numPieces);
 		}
-		if(generateRandomDouble(0, 1) > 0.5) {
-			swapPolygons(i, j);
-		}
-		else {
-			movePolygon(i);
-		}
-		
+
+		swapPolygons(i, j);
+
 		double tempTotalOverlap = seperate(numPieces * 2, totalOverlap);
 
-		if (tempTotalOverlap < totalOverlap) {
+		if (tempTotalOverlap < totalOverlap)
+		{
 			totalOverlap = tempTotalOverlap;
 			currentPieces[i] = lbfgsPieces[i];
 			currentPieces[j] = lbfgsPieces[j];
 			currentVectors = lbfgsVectors;
 			// iter = 0;
 		}
-		else {
+		else
+		{
 			lbfgsPieces[i] = currentPieces[i];
 			lbfgsPieces[j] = currentPieces[j];
 			lbfgsVectors[i] = currentVectors[i];
 			lbfgsVectors[j] = currentVectors[j];
 		}
 
-		if (totalOverlap < eps) {
+		if (totalOverlap < eps)
+		{
 			feasible = true;
 			break;
 		}
@@ -365,8 +415,9 @@ void ILSQN::minimizeOverlap() {
 	}
 }
 
-double ILSQN::getIniaialSolution() {
-	Packing* packing = Packing::getInstance();
+double ILSQN::getIniaialSolution()
+{
+	Packing *packing = Packing::getInstance();
 	packing->preprocess();
 	packing->checkIfps();
 	packing->checkNfps();
@@ -376,8 +427,9 @@ double ILSQN::getIniaialSolution() {
 	return packing->run(placedPieces, currentVectors);
 }
 
-void ILSQN::run() { 
-	currentLength = getIniaialSolution();	// 生成初始布局
+void ILSQN::run()
+{
+	currentLength = getIniaialSolution(); // 生成初始布局
 	currentBin.max_corner().set<0>(currentLength);
 	std::cout << "初始利用率为 = " << allPiecesArea / bg::area(currentBin) << std::endl;
 
@@ -386,7 +438,7 @@ void ILSQN::run() {
 	bestBin = currentBin;
 	bestLength = currentLength;
 
-	currentLength = (1 - dec) * currentLength;	// ���������̰�ı߽�
+	currentLength = (1 - dec) * currentLength; // ���������̰�ı߽�
 	currentBin.max_corner().set<0>(currentLength);
 
 	lbfgsPieces = currentPieces;
@@ -395,12 +447,15 @@ void ILSQN::run() {
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	auto end = start;
 	std::chrono::duration<double> time_taken = end - start;
-	static NoFitPolygon* nfpGenerator = NoFitPolygon::getInstance();
+	static NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
 
-	while (time_taken.count() < parameters.maxRunTime) {
+	while (time_taken.count() < parameters.maxRunTime)
+	{
 
-		for (int i = 0; i < piecesCache.size(); ++i) {
-			for (int j = 0; j < piecesCache[i].size(); ++j) {
+		for (int i = 0; i < piecesCache.size(); ++i)
+		{
+			for (int j = 0; j < piecesCache[i].size(); ++j)
+			{
 				std::string key = getIfrKey(piecesCache[i][j]);
 				polygon_t ifp = nfpGenerator->generateIfp(currentBin, piecesCache[i][j].polygon);
 				ifpsCache[key] = ifp;
@@ -409,25 +464,28 @@ void ILSQN::run() {
 				ifrsCache[key] = ifr;
 			}
 		}
-		minimizeOverlap();	// ִ����С���ص�
+		minimizeOverlap(); // ִ����С���ص�
 		// minimizeGlsOverlap();
-		if (feasible) {
+		if (feasible)
+		{
 			std::cout << "当前利用率 = " << allPiecesArea / bg::area(currentBin) << std::endl;
 			static DataWrite *datawriter = DataWrite::getInstance();
 			datawriter->plotPieces(currentBin, currentPieces, currentVectors);
-			
+
 			bestPieces = currentPieces;
 			bestVectors = currentVectors;
 			bestBin = currentBin;
 			bestLength = currentLength;
-			
-			currentLength = (1 - dec) * currentLength;	// ������ĵĳ���
+
+			currentLength = (1 - dec) * currentLength; // ������ĵĳ���
 			currentBin.max_corner().set<0>(currentLength);
 			feasible = false;
 		}
-		else {
+		else
+		{
 			currentLength = (1 + inc) * currentLength;
-			if (currentLength >= bestLength) {
+			if (currentLength >= bestLength)
+			{
 				currentLength = (1 - dec) * bestLength;
 				currentVectors = bestVectors;
 				currentPieces = bestPieces;
@@ -563,19 +621,19 @@ void ILSQN::run() {
 // 	// }
 // 	double glsTotalOverlap = getGlsTotalOverlap();
 // 	// std::cout << "glsTotalOverlap = " << glsTotalOverlap << std::endl;
-	
+
 // 	int iter = 0;
 // 	while (iter++ < parameters.maxIteration) {
 // 		int i = generateRandomNumber(numPieces),
 // 			j = generateRandomNumber(numPieces);
 
 // 		while (i == j) {
-// 			j = generateRandomNumber(numPieces);  
+// 			j = generateRandomNumber(numPieces);
 // 		}
 // 		swapPolygons(i, j);
 // 		double tempGlsTotalOverlap = seperateGls(numPieces * 2, glsTotalOverlap);
 // 		// std::cout << "tempGlsTotalOverlap = " << glsTotalOverlap << std::endl;
-		
+
 // 		if (tempGlsTotalOverlap < glsTotalOverlap) {
 // 			glsTotalOverlap = tempGlsTotalOverlap;
 // 			currentPieces[i] = lbfgsPieces[i];
@@ -629,7 +687,7 @@ void ILSQN::run() {
 // 	int j = idx+1;
 // 	ret += miuMatrix[0][j] * getPenetrationDepth(piece, vec);
 // 	for (int i = 0; i < currentPieces.size(); ++i) {
-// 		ret += miuMatrix[i + 1][j] * getPenetrationDepth(currentPieces[i], piece, currentVectors[i], vec);	
+// 		ret += miuMatrix[i + 1][j] * getPenetrationDepth(currentPieces[i], piece, currentVectors[i], vec);
 // 	}
 // 	return ret;
 // }
@@ -646,22 +704,26 @@ void ILSQN::run() {
 // }
 
 // double ILSQN::getMaxOverlap() {		// �����������ֵ��ص���
-	double ret = 0.0;
-	double temp;
-	for (int i = 0; i < currentPieces.size(); ++i) {
-		temp = getPenetrationDepth(currentPieces[i], currentVectors[i]);
-		if (temp > ret) {
-			ret = temp;
-		}
-		overlapMatrix[i+1][0] = overlapMatrix[0][i+1] = temp;
+// double ret = 0.0;
+// double temp;
+// for (int i = 0; i < currentPieces.size(); ++i)
+// {
+// 	temp = getPenetrationDepth(currentPieces[i], currentVectors[i]);
+// 	if (temp > ret)
+// 	{
+// 		ret = temp;
+// 	}
+// 	overlapMatrix[i + 1][0] = overlapMatrix[0][i + 1] = temp;
 
-		for (int j = i + 1; j < currentPieces.size(); ++j) {
-			temp = getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
-			if (temp > ret) {
-				ret = temp;
-			}
-			overlapMatrix[i+1][j+1] = overlapMatrix[j+1][i+1] = temp;
-		}
-	}
-	return ret;
-}
+// 	for (int j = i + 1; j < currentPieces.size(); ++j)
+// 	{
+// 		temp = getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
+// 		if (temp > ret)
+// 		{
+// 			ret = temp;
+// 		}
+// 		overlapMatrix[i + 1][j + 1] = overlapMatrix[j + 1][i + 1] = temp;
+// 	}
+// }
+// return ret;
+// }
