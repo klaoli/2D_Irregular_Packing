@@ -16,7 +16,7 @@ namespace MyNest {
 		static std::vector<Vector> lbfgsVectors;
 		static constexpr double eps = 10e-8;
 
-		static double getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2);	// ��͸����������ص���
+		static double getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2);	// 计算两个零件之间的穿透深度
 		static double getPenetrationDepth(Piece &p, Vector &vec);
 		static double getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, Vector &seperateVector);
 		static double getPenetrationDepth(Piece &p, Vector &vec, Vector &seperateVector);
@@ -26,25 +26,25 @@ namespace MyNest {
 		inline int generateRandomNumber(int n);
 		// 生成指定范围内的随机双精度浮点数
 		inline double generateRandomDouble(double min, double max);
-		double getTotalOverlap();		// ��ȡ��ǰ���ֵ��ܵ��ص���
-		double getOneTotalOverlap(Piece &piece, Vector &vec);	// ��ȡһ���������������������ص���
-		double getIniaialSolution();	// ����һ����ʼ��
-		void minimizeOverlap();			// ��С���ص�
-		void movePolygon(int idx);		// �ڵ�ǰ�����У�ѡȡ��idx��������ƶ������ص�����С��λ��
-		void swapPolygons(int idx1, int idx2);
+		double getTotalOverlap();		// 计算当前布局总的重叠量
+		double getOneTotalOverlap(Piece &piece, Vector &vec);	// 计算piece与其他零件之间的重叠量
+		double getIniaialSolution();	// 生成初始布局
+		void minimizeOverlap();			// 最小化重叠
+		void movePolygon(int idx);		// 移动
+		void swapPolygons(int idx1, int idx2);	// 交换两个零件的位置
 		
-		double seperate(const int N, double totalOverlap); // �����㷨
-		void run();		// ʹ�÷������Ż��㷨�Ż���ǰ����
+		double seperate(const int N, double totalOverlap); // 分离算法
+		void run();		// 执行ilsqn
 		
 	public:
 		double currentLength;
 		box_t currentBin;
-		std::vector<Piece> currentPieces;	// ��ǰ��
+		std::vector<Piece> currentPieces;	
 		std::vector<Vector> currentVectors;
 
 		double bestLength;
 		box_t bestBin;
-		std::vector<Piece> bestPieces;		// ��ý�
+		std::vector<Piece> bestPieces;		
 		std::vector<Vector> bestVectors;
 
 	private:
