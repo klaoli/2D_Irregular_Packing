@@ -18,6 +18,7 @@
 实验结果（这里使用ESICUP提供的若干数据集来进行仿真）：<br>
   后续更新实验结果......<br>			
 ![image](https://github.com/user-attachments/assets/5e12dda5-fd2e-4dcf-baf1-ccadf91d2eaf)
+![image](https://github.com/user-attachments/assets/cd05aae5-3114-4398-8a79-62fbc76c2690)
 
 
 
