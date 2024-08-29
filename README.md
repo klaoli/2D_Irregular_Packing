@@ -29,3 +29,5 @@
   (4) cmake ..<br>
   (5) make<br>
   (6) ./ILSQN Jakobs1<br>
+
+  Email：lilinfeng3983@163.com
