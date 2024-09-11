@@ -11,8 +11,6 @@ file(GLOB SRCS "*.cpp" "./include/*.cpp")
 # 添加可执行文件
 add_executable(ILSQN ${SRCS} ${HEADERS})
 
-target_link_libraries(ILSQN)
-
 # 如果需要使用 OpenMP，继续添加 OpenMP 的配置和链接部分
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)
