@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置你的源文件和头文件
-file(GLOB HEADERS "*.h" "*.hpp" "./include/*.hpp")
+file(GLOB HEADERS "*.h" "*.hpp" "./include/*.hpp" "libnfporb-master/src/algo/*.hpp" "libnfporb-master/src/*.hpp")
 file(GLOB SRCS "*.cpp" "./include/*.cpp")
 
 # 添加可执行文件
