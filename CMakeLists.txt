@@ -11,7 +11,6 @@ file(GLOB SRCS "*.cpp" "./include/*.cpp")
 # 添加可执行文件
 add_executable(ILSQN ${SRCS} ${HEADERS})
 
-# 链接 Clipper 库
 target_link_libraries(ILSQN)
 
 # 如果需要使用 OpenMP，继续添加 OpenMP 的配置和链接部分
