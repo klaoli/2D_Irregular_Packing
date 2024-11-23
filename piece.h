@@ -10,28 +10,28 @@ namespace MyNest {
 
 	public:
 		Piece();
-		bool operator ==(const Piece &p) const;   // ÖØÔØ==
+		bool operator ==(const Piece &p) const;   // é‡è½½==
 
-		void translate(double x, double y); // Æ½ÒÆÁã¼ş
-		void rotate(Angle angle);           // Ğı×ªÁã¼ş
-		void offset(double scale);          // ·ÅËõÁã¼ş
-		void clean();   // ¼ò»¯¶à±ßĞÎ
+		void translate(double x, double y); // å¹³ç§»é›¶ä»¶
+		void rotate(Angle angle);           // æ—‹è½¬é›¶ä»¶
+		void offset(double scale);          // æ”¾ç¼©é›¶ä»¶
+		void clean();   // ç®€åŒ–å¤šè¾¹å½¢
 
-		void getEnvelope();    // »ñÈ¡Áã¼şµÄÍâ½ç¾ÙĞĞ<width, height>
-		point_t grivaty()     const;    // ¼ÆËãÁã¼şÖØĞÄ
-		double  signedArea()  const;    // "Ç©ÃûÃæ»ı",Èç¹ûÇ©ÃûÃæ»ıÎªÕı£¬¶à±ßĞÎµÄ¶¥µãÊÇÄæÊ±ÕëË³ĞòµÄ
-										// Èç¹ûÇ©ÃûÃæ»ıÎª¸º£¬¶à±ßĞÎµÄ¶¥µãÊÇË³Ê±ÕëË³ĞòµÄ¡£
+		void getEnvelope();    // è·å–é›¶ä»¶çš„å¤–ç•Œä¸¾è¡Œ<width, height>
+		point_t grivaty()     const;    // è®¡ç®—é›¶ä»¶é‡å¿ƒ
+		double  signedArea()  const;    // "ç­¾åé¢ç§¯",å¦‚æœç­¾åé¢ç§¯ä¸ºæ­£ï¼Œå¤šè¾¹å½¢çš„é¡¶ç‚¹æ˜¯é€†æ—¶é’ˆé¡ºåºçš„
+										// å¦‚æœç­¾åé¢ç§¯ä¸ºè´Ÿï¼Œå¤šè¾¹å½¢çš„é¡¶ç‚¹æ˜¯é¡ºæ—¶é’ˆé¡ºåºçš„ã€‚
 
 	public:
-		int id;        // Áã¼ş±àºÅ£¨´Ó1¿ªÊ¼£©
-		int typeId;    // Áã¼şÀàĞÍºÅ£¨´Ó1¿ªÊ¼£©
-		polygon_t polygon;      // ¶à±ßĞÎ
-		Angle rotation;         // Ğı×ª½Ç¶È£¨0~360£©
-		double area;            // Áã¼şÃæ»ı
-		box_t bounding;         // Áã¼şÍâ½Ó¾ØĞÎ
-		bool defect;            // ÊÇ·ñÓĞÈ±Ïİ£¨¿×¶´£©
+		int id;        // é›¶ä»¶ç¼–å·ï¼ˆä»1å¼€å§‹ï¼‰
+		int typeId;    // é›¶ä»¶ç±»å‹å·ï¼ˆä»1å¼€å§‹ï¼‰
+		polygon_t polygon;      // å¤šè¾¹å½¢
+		Angle rotation;         // æ—‹è½¬è§’åº¦ï¼ˆ0~360ï¼‰
+		double area;            // é›¶ä»¶é¢ç§¯
+		box_t bounding;         // é›¶ä»¶å¤–æ¥çŸ©å½¢
+		bool defect;            // æ˜¯å¦æœ‰ç¼ºé™·ï¼ˆå­”æ´ï¼‰
 
-		Vector transVector;		// Áã¼şµÄÆ½ÒÆÏòÁ¿
+		Vector transVector;		// é›¶ä»¶çš„å¹³ç§»å‘é‡
 	};
 }
 #endif // PIECE_H

@@ -11,11 +11,11 @@ namespace MyNest {
 		Vector(double _x, double _y);
 
 		bool operator == (const Vector &vec) const;
-		double operator *(const Vector &vec) const;   // ÄÚ»ı
+		double operator *(const Vector &vec) const;   // å†…ç§¯
 		Vector operator*(const double a) const;
 		Vector operator +(const Vector &vec) const;
 		Vector operator -(const Vector &vec) const;
-		double cross(const Vector &vec) const;  // ²æ³Ë
+		double cross(const Vector &vec) const;  // å‰ä¹˜
 
 	public:
 		double x;

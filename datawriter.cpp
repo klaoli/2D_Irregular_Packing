@@ -21,7 +21,7 @@ DataWrite* DataWrite::getInstance() {
 
 
 void DataWrite::writeNfps(const std::unordered_map<std::string, polygon_t>& nfpPairs, std::string &filePath) const {
-	std::ofstream outf;     // д��csv�ļ�
+	std::ofstream outf;     // 写入csv文件
 	outf.open(filePath, std::ios::out);
 	if (!outf) {
 		std::cerr << "Error: Failed to open file." << std::endl;
@@ -30,17 +30,17 @@ void DataWrite::writeNfps(const std::unordered_map<std::string, polygon_t>& nfpP
 	outf << "Key,Outers,Inners" << std::endl;
 	for (auto &nfpPair : nfpPairs) {
 		const auto& nfp = nfpPair.second;
-		outf << nfpPair.first << ",";  // д���
-		for (const auto& point : nfp.outer()) {    // д���⻷����
+		outf << nfpPair.first << ",";  // 写入键
+		for (const auto& point : nfp.outer()) {    // 写入外环坐标
 			outf << point.x() << " " << point.y() << " ";
 		}
-		outf << ","; // �ָ���
-		for (const auto& inner : nfp.inners()) {   // д���ڻ�����
+		outf << ","; // 分隔符
+		for (const auto& inner : nfp.inners()) {   // 写入内环坐标
 			for (const auto& point : inner) {
 				outf << point.x() << " " << point.y() << " ";
 			}
 		}
-		outf << std::endl; // ����
+		outf << std::endl; // 换行
 	}
 	outf.close();
 }

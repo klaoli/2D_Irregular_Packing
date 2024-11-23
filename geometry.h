@@ -14,43 +14,43 @@ namespace MyNest {
 	constexpr double PI = 3.14159265358979323846;
 
 	namespace bg = boost::geometry;
-	// n ά������
+	// n 维点坐标
 	template<size_t dimension = 2>
 	using point_base = bg::model::point<double, dimension, bg::cs::cartesian>;
 
 
 	/*****************************
-		* ���¶���ȫ����Զ�ά������ *
+		* 以下定义全部针对二维点坐标 *
 		******************************/
-		// ��ά�����
+		// 二维坐标点
 	using point_t = bg::model::d2::point_xy<double>;
 
-	// ����
+	// 曲线
 	using linestring_t = bg::model::linestring<point_t>;
 
-	// ����Σ���ʱ�룬���=�յ㣬����0�����߶���ڻ� inner rings��
+	// 多边形（逆时针，起点=终点，包括0个或者多个内环 inner rings）
 	using polygon_t = bg::model::polygon<point_t, false, true>;
 
-	// ������ʱ�룬���=�յ㣩
+	// 环（逆时针，起点=终点）
 	//using ring_t = bg::model::ring<point_t, false, true>;
 	using ring_t = polygon_t::ring_type;
 
-	// �㼯��
+	// 点集合
 	using multi_point_t = bg::model::multi_point<point_t>;
 
-	// ���߼���
+	// 曲线集合
 	using multi_linestring_t = bg::model::multi_linestring<linestring_t>;
 
-	// ����μ���
+	// 多边形集合
 	using multi_polygon_t = bg::model::multi_polygon<polygon_t>;
 
-	// ���Σ�min_corner(), max_corner()��
+	// 矩形（min_corner(), max_corner()）
 	using box_t = bg::model::box<point_t>;
 
-	// �߶�(���㹹���߶�)
+	// 线段(两点构成线段)
 	using segment_t = bg::model::segment<point_t>;
 
-	// ClipperLib��������
+	// ClipperLib数据类型
 	using cInt = ClipperLib::cInt;
 	using IntPoint = ClipperLib::IntPoint;
 	using Path = ClipperLib::Path;

@@ -61,7 +61,7 @@ void Piece::translate(double dx, double dy) {
 
 	polygon = output;
 
-	// ´¦ÀíÍâ½Ó¾ØĞÎ
+	// å¤„ç†å¤–æ¥çŸ©å½¢
 	getEnvelope();
 }
 
@@ -77,7 +77,7 @@ void Piece::rotate(Angle angle) {
 
 	rotation = angle;
 
-	// ´¦ÀíÍâ½Ó¾ØĞÎ
+	// å¤„ç†å¤–æ¥çŸ©å½¢
 	getEnvelope();
 }
 
@@ -88,8 +88,8 @@ void Piece::offset(double scale) {
 	Paths paths = converter->boost2ClipperPolygon(polygon);
 
 	Paths output;
-	// JoinType = jtMiter£¬³¬³ö±¶Êı½Ø¶Ï¼â½Ç£¬MiterLimit = 2.0
-	// JoinType = jtRound£¬Ê¹ÓÃ»¡Ïß°ü¹ü¼â½Ç, ArcTolerance = Config::curveTolerance * Config::scaleRate
+	// JoinType = jtMiterï¼Œè¶…å‡ºå€æ•°æˆªæ–­å°–è§’ï¼ŒMiterLimit = 2.0
+	// JoinType = jtRoundï¼Œä½¿ç”¨å¼§çº¿åŒ…è£¹å°–è§’, ArcTolerance = Config::curveTolerance * Config::scaleRate
 	ClipperLib::ClipperOffset co(2.0, Parameters::curveTolerance * Parameters::scaleRate);
 	co.AddPaths(paths, ClipperLib::JoinType::jtRound, ClipperLib::EndType::etClosedPolygon);
 	co.Execute(output, scale * Parameters::scaleRate);
@@ -99,7 +99,7 @@ void Piece::offset(double scale) {
 	polygon = converter->clipper2BoostPolygon(output);
 	area = bg::area(polygon);
 
-	// ´¦ÀíÍâ½Ó¾ØĞÎ
+	// å¤„ç†å¤–æ¥çŸ©å½¢
 	getEnvelope();
 
 }
@@ -109,16 +109,16 @@ void Piece::clean() {
 	static GeometryConvert *converter = GeometryConvert::getInstance();
 	Paths paths = converter->boost2ClipperPolygon(polygon);
 
-	// É¾³ı×ÔÏà½»µã
+	// åˆ é™¤è‡ªç›¸äº¤ç‚¹
 	ClipperLib::SimplifyPolygons(paths, ClipperLib::PolyFillType::pftEvenOdd);
 
-	// ¼ò»¯¶à±ßĞÎ£¬É¾³ı¹²Ïßµã
+	// ç®€åŒ–å¤šè¾¹å½¢ï¼Œåˆ é™¤å…±çº¿ç‚¹
 	CleanPolygons(paths, Parameters::curveTolerance * Parameters::scaleRate);
 	assert(paths.size() == 1);
 	polygon = converter->clipper2BoostPolygon(paths);
 	area = bg::area(polygon);
 
-	// ´¦ÀíÍâ½Ó¾ØĞÎ
+	// å¤„ç†å¤–æ¥çŸ©å½¢
 	getEnvelope();
 }
 

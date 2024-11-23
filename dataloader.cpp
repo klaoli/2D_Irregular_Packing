@@ -25,15 +25,15 @@ DataLoader* DataLoader::getInstance() {
 bool DataLoader::loadPieces() {
 
 	std::string line;
-	std::vector<double> v1, v2;   // ´æ´¢µÚÒ»ĞĞÊı¾İ¡¢µÚ¶şĞĞÊı¾İ
-	std::vector< std::vector<double> > v3;  // µÚÈıĞĞµ½×îºóÒ»ĞĞ
+	std::vector<double> v1, v2;   // å­˜å‚¨ç¬¬ä¸€è¡Œæ•°æ®ã€ç¬¬äºŒè¡Œæ•°æ®
+	std::vector< std::vector<double> > v3;  // ç¬¬ä¸‰è¡Œåˆ°æœ€åä¸€è¡Œ
 	std::ifstream fin(parameters.piecePath);
 	if (!fin) {
 		std::cerr << "Error: Pieces failed to open file." << std::endl;
 		return false;
 	}
 
-	std::getline(fin, line);    // »ñÈ¡µÚÒ»ĞĞÊı¾İ
+	std::getline(fin, line);    // è·å–ç¬¬ä¸€è¡Œæ•°æ®
 	std::stringstream ss;
 	ss << line;
 	if (!ss.eof()) {
@@ -42,7 +42,7 @@ bool DataLoader::loadPieces() {
 			v1.push_back(temp);
 	}
 
-	std::getline(fin, line);    // ¶ÁÈ¡µÚ¶şĞĞÊı¾İ
+	std::getline(fin, line);    // è¯»å–ç¬¬äºŒè¡Œæ•°æ®
 	ss.clear();
 	ss << line;
 	if (!ss.eof()) {
@@ -51,7 +51,7 @@ bool DataLoader::loadPieces() {
 			v2.push_back(temp);
 	}
 
-	while (getline(fin, line)) {    // µÚÈıĞĞÖÁ×îºóÒ»ĞĞ
+	while (getline(fin, line)) {    // ç¬¬ä¸‰è¡Œè‡³æœ€åä¸€è¡Œ
 		ss.clear();
 		std::vector<double> tmp;
 		ss << line;
@@ -64,7 +64,7 @@ bool DataLoader::loadPieces() {
 	}
 	fin.close();
 
-	int numPolys = v1[0];    // ¶à±ßĞÎµÄÊıÁ¿
+	int numPolys = v1[0];    // å¤šè¾¹å½¢çš„æ•°é‡
 
 	bg::set<bg::max_corner, 0>(bin, v2[0] * parameters.polygonScaleRate);
 	bg::set<bg::max_corner, 1>(bin, v2[1] * parameters.polygonScaleRate);
@@ -76,7 +76,7 @@ bool DataLoader::loadPieces() {
 			point_t p(v3[i][j] * parameters.polygonScaleRate, v3[i][j + 1] * parameters.polygonScaleRate);
 			polygon.outer().push_back(p);
 		}
-		bg::correct(polygon); // ĞÎ³É±ÕºÏ¶à±ßĞÎ, ¶à±ßĞÎÄæÊ±Õë»¯
+		bg::correct(polygon); // å½¢æˆé—­åˆå¤šè¾¹å½¢, å¤šè¾¹å½¢é€†æ—¶é’ˆåŒ–
 		piece.id = i;
 		piece.polygon = polygon;
 		piece.area = bg::area(polygon);
@@ -111,7 +111,7 @@ bool DataLoader::loadNfps() {
 
 	std::string line;
 
-	std::getline(fin, line);   // Ìø¹ıÎÄ¼şµÚÒ»ĞĞ
+	std::getline(fin, line);   // è·³è¿‡æ–‡ä»¶ç¬¬ä¸€è¡Œ
 	while (std::getline(fin, line)) {
 		std::string str;
 		std::stringstream ss(line);
@@ -132,7 +132,7 @@ bool DataLoader::loadNfps() {
 		}
 
 		for (int j = 0; j < values.size(); j += 2) {
-			nfp.outer().push_back(point_t(values[j], values[j + 1]));    //Íâ»·
+			nfp.outer().push_back(point_t(values[j], values[j + 1]));    //ï¿½â»·
 		}
 		nfpsCache.insert(std::pair<std::string, polygon_t>(lineArray[0], nfp));
 	}
@@ -148,7 +148,7 @@ bool DataLoader::loadIfrs() {
 
 	std::string line;
 
-	std::getline(fin, line);   // Ìø¹ıÎÄ¼şµÚÒ»ĞĞÄÚÈİ
+	std::getline(fin, line);   // è·³è¿‡æ–‡ä»¶ç¬¬ä¸€è¡Œå†…å®¹
 	while (std::getline(fin, line)) {
 		std::string str;
 		std::stringstream ss(line);
@@ -169,7 +169,7 @@ bool DataLoader::loadIfrs() {
 		}
 
 		for (int j = 0; j < values.size(); j += 2) {
-			ifp.outer().push_back(point_t(values[j], values[j + 1]));    //Íâ»·
+			ifp.outer().push_back(point_t(values[j], values[j + 1]));    //ï¿½â»·
 		}
 		ifpsCache.insert(std::pair<std::string, polygon_t>(lineArray[0], ifp));
 		box_t ifr;
@@ -179,7 +179,7 @@ bool DataLoader::loadIfrs() {
 	return ifpsCache.size() > 0 && ifrsCache.size() > 0;
 }
  
-inline std::string trim(const std::string& str) {   // ĞŞÕû×Ö·û´®Ç°ºóµÄ¿Õ°××Ö·û£¬°üÀ¨¿Õ¸ñ¡¢ÖÆ±í·ûºÍ»»ĞĞ·û
+inline std::string trim(const std::string& str) {   // ä¿®æ•´å­—ç¬¦ä¸²å‰åçš„ç©ºç™½å­—ç¬¦ï¼ŒåŒ…æ‹¬ç©ºæ ¼ã€åˆ¶è¡¨ç¬¦å’Œæ¢è¡Œç¬¦
 	std::size_t first = str.find_first_not_of(" \t\n\r");
 	std::size_t last = str.find_last_not_of(" \t\n\r");
 	if (first == std::string::npos || last == std::string::npos) {
@@ -214,11 +214,11 @@ bool DataLoader::loadParameters(const std::string& parametersPath) {
 		if (std::getline(iss, key, '=')) {
 			std::string value;
 			if (std::getline(iss, value)) {
-				// ĞŞÕû¿Õ°××Ö·û
+				// ä¿®æ•´ç©ºç™½å­—ç¬¦
 				key = trim(key);
 				value = trim(value);
 
-				// ¸ù¾İ¼üÃû·ÖÅäÖµ¸ø½á¹¹Ìå³ÉÔ±
+				// æ ¹æ®é”®ååˆ†é…å€¼ç»™ç»“æ„ä½“æˆå‘˜
 				if (key.compare(minGap) == 0) {
 					parameters.minGap = std::stod(value);
 				}

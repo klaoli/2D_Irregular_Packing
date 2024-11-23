@@ -22,7 +22,7 @@ Packing *Packing::getInstance()
 
 void Packing::preprocess()
 {
-	// ����  ��  ƽ�Ƶ�ԭ��
+	// 放缩  简化  平移到原点
 	std::sort(pieces.begin(), pieces.end(), [&](Piece &l, Piece &r)
 			  { return l.area > r.area; });
 	piecesCache.clear();
@@ -51,7 +51,7 @@ int Packing::checkNfps()
 		return nfpsCache.size();
 	}
 
-	std::vector<Piece> allRotationPieces; // �����нǶȵ�������������У����ڱ���
+	std::vector<Piece> allRotationPieces; // 将所有角度的零件放入容器中，便于遍历
 	for (int i = 0; i < piecesCache.size(); ++i)
 	{
 		for (int j = 0; j < piecesCache[i].size(); ++j)
@@ -69,6 +69,7 @@ int Packing::checkNfps()
 			std::string nfpKey = getNfpKey(allRotationPieces[j], allRotationPieces[i]); // no fit polygon
 			if (nfpsCache.find(nfpKey) == nfpsCache.end())
 			{
+				// 两种方法构造nfp: 滑动法、闵可夫斯基矢量差方法
 
 				// polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[j].polygon, allRotationPieces[i].polygon);
 
@@ -104,7 +105,7 @@ int Packing::checkIfps()
 		return ifrsCache.size();
 	}
 
-	std::vector<Piece> allRotationPieces; // �����нǶȵ�������������У����ڱ���
+	std::vector<Piece> allRotationPieces; // 将所有角度的零件放入容器中，便于遍历
 	for (int i = 0; i < piecesCache.size(); ++i)
 	{
 		for (int j = 0; j < piecesCache[i].size(); ++j)
@@ -115,7 +116,7 @@ int Packing::checkIfps()
 	for (int i = 0; i < allRotationPieces.size(); ++i)
 	{
 
-		std::string ifpKey = getIfrKey(allRotationPieces[i]); // �ڽ��ٽ����
+		std::string ifpKey = getIfrKey(allRotationPieces[i]); // 内接临界矩形
 
 		if (ifpsCache.find(ifpKey) == ifpsCache.end())
 		{
@@ -163,13 +164,13 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 
 		Vector curVector;
 		if (placedPieces.size() == 0)
-		{ // �ŷŵ�һ��
+		{ // 排放第一个
 			curVector.x = Parameters::MAXDOUBLE;
-			point_t referPoint = _pieces[i].polygon.outer().front(); // �ο���
+			point_t referPoint = _pieces[i].polygon.outer().front(); // 参考点
 			for (auto &point : ifp.outer())
 			{
 				if (point.x() - referPoint.x() < curVector.x)
-				{ // Ѱ�� ifr ����ߵ�λ��
+				{ // 寻找 ifr 最左边的位置
 					curVector = Vector(point.x() - referPoint.x(), point.y() - referPoint.y());
 				}
 			}
@@ -182,11 +183,11 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 		Paths clipperFinalNfp;
 		ClipperLib::Clipper clipperUnion;
 		ClipperLib::Clipper clipperDifference;
-		// bin_nfp ת���� clipper paths���� clipperBinNfp.
+		// bin_nfp 转换成 clipper paths，即 clipperBinNfp.
 		static GeometryConvert *converter = GeometryConvert::getInstance();
 		Paths clipperBinNfp = converter->boost2ClipperPolygon(ifp);
 
-		// nfp ת���� clipper paths, �󲢼��õ� clipperUnionNfp.
+		// nfp 转换成 clipper paths, 求并集得到 clipperUnionNfp.
 		for (int j = 0; j < placedPieces.size(); ++j)
 		{
 			std::string key = getNfpKey(placedPieces[j], _pieces[i]);
@@ -207,7 +208,7 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 			continue;
 		}
 
-		// clipperBinNfp �� clipperUnionNfp �ü��������õ� clipperFinalNfp.
+		// clipperBinNfp 经 clipperUnionNfp 裁剪（求差集）得到 clipperFinalNfp.
 		clipperDifference.AddPaths(clipperBinNfp, ClipperLib::PolyType::ptSubject, true);
 		clipperDifference.AddPaths(clipperUnionNfp, ClipperLib::PolyType::ptClip, true);
 		if (!clipperDifference.Execute(ClipperLib::ClipType::ctDifference, clipperFinalNfp, ClipperLib::PolyFillType::pftEvenOdd, ClipperLib::PolyFillType::pftNonZero))
@@ -234,13 +235,13 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 #pragma endregion ClipperExecute
 
 #pragma region Placement
-		std::vector<ring_t> finalNfp; // �� final_nfp ��ÿ�������Ϸ������
+		std::vector<ring_t> finalNfp; // 在 final_nfp 的每个顶点上放置零件
 		finalNfp.reserve(clipperFinalNfp.size());
 		for (auto &path : clipperFinalNfp)
 		{
 			finalNfp.push_back(converter->clipper2BoostRing(path));
 		}
-		point_t mostLeftPoint = findMostLeftPoint(finalNfp); // ���������
+		point_t mostLeftPoint = findMostLeftPoint(finalNfp); // 计算最左点
 		point_t referPoint = _pieces[i].polygon.outer().front();
 		curVector = Vector(mostLeftPoint.x() - referPoint.x(), mostLeftPoint.y() - referPoint.y());
 		placedPieces.push_back(_pieces[i]);

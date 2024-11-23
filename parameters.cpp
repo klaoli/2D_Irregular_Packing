@@ -1,7 +1,7 @@
 #include "parameters.h"
 
 namespace MyNest {
-	Parameters parameters;  // ����ȫ�ֱ���
+	Parameters parameters;  // 定义全局变量
 
 	box_t bin;
 	std::vector<Piece> pieces;

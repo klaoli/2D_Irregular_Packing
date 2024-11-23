@@ -46,34 +46,31 @@ inline bool boxIsOverlap(box_t &b1, box_t &b2)
 			std::min(b1.max_corner().y(), b2.max_corner().y()) > std::max(b1.min_corner().y(), b2.min_corner().y()));
 }
 
-inline Vector shortestTranslationVector(point_t &p, segment_t &s)
-{
+inline Vector shortestTranslationVector(point_t &p, segment_t &s) {
 	Vector p1(s.first.x(), s.first.y());
 	Vector p2(s.second.x(), s.second.y());
 	Vector p0(p.x(), p.y());
 
-	Vector v = p2 - p1; // �߶η�������
-	Vector w = p0 - p1; // ��p1����p������
+	Vector v = p2 - p1; // 线段方向向量
+	Vector w = p0 - p1; // 从p1到点p的向量
 
-	double c1 = w * v; // ��p�ڷ�������v�ϵ�ͶӰ����
-	if (c1 <= 0)
-	{
-		return p1 - p0; // ͶӰ����p1֮ǰ���������p1
+	double c1 = w * v; // 点p在方向向量v上的投影长度
+	if (c1 <= 0) {
+		return p1 - p0;	// 投影点在p1之前，最近点是p1
 	}
 
-	double c2 = v * v; // ��������v�ĳ���ƽ��
-	if (c2 <= c1)
-	{
-		return p2 - p0; // ͶӰ����p2֮���������p2
+	double c2 = v * v; // 方向向量v的长度平方
+	if (c2 <= c1) {
+		return p2 - p0; // 投影点在p2之后，最近点是p2
 	}
 
-	// ͶӰ�����߶���
+	// 投影点在线段上
 	double b = c1 / c2;
-	Vector pb = p1 + v * b; // ͶӰ��
+	Vector pb = p1 + v * b; // 投影点
 	return pb - p0;
 }
 
-// ����㵽���ε���̾���
+// 计算点到矩形的最短距离
 inline double pointToRectangleDistance(const point_t &p, const box_t &rect)
 {
 	double dx = std::max(rect.min_corner().x() - p.x(), 0.0);
@@ -95,10 +92,10 @@ double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2)
 			   point_t(p2.bounding.max_corner().x() + v2.x, p2.bounding.max_corner().y() + v2.y));
 
 	if (boxIsOverlap(box1, box2))
-	{ // �ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
+	{ // //判断两个多边形是否有相交的可能，可能的话返回真
 		std::string key = getNfpKey(p1, p2);
 		polygon_t nfp = nfpsCache[key];
-		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
+		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2也可表达参考点坐标，将参考点沿v1的反方向平移可减少计算量
 
 		if (bg::within(referPoint, nfp))
 		{
@@ -138,10 +135,10 @@ double ILSQN::getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, 
 			   point_t(p2.bounding.max_corner().x() + v2.x, p2.bounding.max_corner().y() + v2.y));
 
 	if (boxIsOverlap(box1, box2))
-	{ // �ж�����������Ƿ����ཻ�Ŀ��ܣ����ܵĻ�������
+	{ // 判断两个多边形是否有相交的可能，可能的话返回真
 		std::string key = getNfpKey(p1, p2);
 		polygon_t nfp = nfpsCache[key];
-		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2Ҳ�ɱ���ο������꣬���ο�����v1�ķ�����ƽ�ƿɼ��ټ�����
+		point_t referPoint(v2.x - v1.x, v2.y - v1.y); // v2也可表达参考点坐标，将参考点沿v1的反方向平移可减少计算量
 
 		if (bg::within(referPoint, nfp))
 		{
@@ -172,7 +169,7 @@ double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector)
 	box_t ifr = ifrsCache[key];
 	polygon_t ifp = ifpsCache[key];
 	point_t referPoint(v.x, v.y);
-	// ������ھ����ڲ�������������
+	// 如果点在矩形内部，返回零向量
 	if (referPoint.x() >= ifr.min_corner().x() && referPoint.x() <= ifr.max_corner().x() &&
 		referPoint.y() >= ifr.min_corner().y() && referPoint.y() <= ifr.max_corner().y())
 	{
@@ -180,7 +177,7 @@ double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector)
 		return 0.0;
 	}
 	double minDistanceSquared = Parameters::MAXDOUBLE;
-	// �������ε�ÿһ���ߣ��ҵ���̵�ƽ������
+	// 遍历矩形的每一条边，找到最短的平移向量
 	for (int i = 0; i < ifp.outer().size() - 1; ++i)
 	{
 		segment_t segment(ifp.outer()[i], ifp.outer()[i + 1]);
@@ -196,7 +193,7 @@ double ILSQN::getPenetrationDepth(Piece &p, Vector &v, Vector &seperateVector)
 }
 
 double ILSQN::getTotalOverlap()
-{ // �����������ֵ��ص���
+{ // 计算整个布局的重叠量
 	double ret = 0.0;
 	for (int i = 0; i < currentPieces.size(); ++i)
 	{
@@ -411,7 +408,7 @@ void ILSQN::minimizeOverlap()
 			feasible = true;
 			break;
 		}
-		// std::cout << "��ǰ�ܵ��ص��� = " << totalOverlap << std::endl;
+		// std::cout << "当前总的重叠量 = " << totalOverlap << std::endl;
 	}
 }
 
@@ -438,7 +435,7 @@ void ILSQN::run()
 	bestBin = currentBin;
 	bestLength = currentLength;
 
-	currentLength = (1 - dec) * currentLength; // ���������̰�ı߽�
+	currentLength = (1 - dec) * currentLength; // 按比例缩短板材边界
 	currentBin.max_corner().set<0>(currentLength);
 
 	lbfgsPieces = currentPieces;
@@ -464,7 +461,7 @@ void ILSQN::run()
 				ifrsCache[key] = ifr;
 			}
 		}
-		minimizeOverlap(); // ִ����С���ص�
+		minimizeOverlap(); // 执行最小化重叠
 		// minimizeGlsOverlap();
 		if (feasible)
 		{
@@ -477,7 +474,7 @@ void ILSQN::run()
 			bestBin = currentBin;
 			bestLength = currentLength;
 
-			currentLength = (1 - dec) * currentLength; // ������ĵĳ���
+			currentLength = (1 - dec) * currentLength; // 缩减板材的长度
 			currentBin.max_corner().set<0>(currentLength);
 			feasible = false;
 		}

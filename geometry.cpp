@@ -89,7 +89,7 @@ ring_t GeometryConvert::clipper2BoostRing(const Path &path) const {
 
 polygon_t GeometryConvert::clipper2BoostPolygon(const Paths &poly) const {
 	polygon_t retPoly;
-	int biggestIndex = 0;  // Ãæ»ı×î´óµÄ Path ×÷ÎªÍâ»·
+	int biggestIndex = 0;  // é¢ç§¯æœ€å¤§çš„ Path ä½œä¸ºå¤–ç¯
 
 	double biggestArea = ClipperLib::Area(poly[0]);
 	for (int i = 1; i < poly.size(); ++i) {
@@ -187,16 +187,16 @@ libnfporb::polygon_t GeometryConvert::boost2LibNfpPolygon(const polygon_t& polyg
 }
 
 
-// º¯Êı£º¼ì²âÈı¸öµãÊÇ·ñ¹²Ïß
+// æ£€æµ‹ä¸‰ä¸ªç‚¹æ˜¯å¦å…±çº¿
 //static bool isCollinear(const libnfporb::point_t & p1, const libnfporb::point_t& p2, const libnfporb::point_t& p3, double epsilon = 1e-9) {
 //	double area = std::abs((p1.x_ * (p2.y_ - p3.y_) +	p2.x_ * (p3.y_ - p1.y_) + p3.x_ * (p1.y_ - p2.y_)).val());
 //
 //	return area < epsilon;
 //}
 //
-//// º¯Êı£ºÉ¾³ı¶à±ßĞÎÖĞµÄ¹²Ïßµã
+//// åˆ é™¤å¤šè¾¹å½¢ä¸­çš„å…±çº¿ç‚¹
 //static void removeCollinearPoints(libnfporb::polygon_t& polygon, double epsilon = 1e-9) {
-//	if (polygon.outer().size() < 4) return; // ÖÁÉÙĞèÒª4¸öµã£¬°üÀ¨Ê×Î²ÖØ¸´µã
+//	if (polygon.outer().size() < 4) return; // è‡³å°‘éœ€è¦4ä¸ªç‚¹ï¼ŒåŒ…æ‹¬é¦–å°¾é‡å¤ç‚¹
 //
 //	libnfporb::polygon_t result;
 //	result.outer().push_back(polygon.outer()[0]);
@@ -209,10 +209,10 @@ libnfporb::polygon_t GeometryConvert::boost2LibNfpPolygon(const polygon_t& polyg
 //
 //	result.outer().push_back(polygon.outer().back());
 //
-//	// Èç¹ûÊ×Î²µãÒ²ĞèÒªÅĞ¶ÏÊÇ·ñ¹²Ïß£¨Ê×Î²µãÓ¦µ±ÏàÍ¬£©
+//	// å¦‚æœé¦–å°¾ç‚¹ä¹Ÿéœ€è¦åˆ¤æ–­æ˜¯å¦å…±çº¿ï¼ˆé¦–å°¾ç‚¹åº”å½“ç›¸åŒï¼‰
 //	if (isCollinear(result.outer()[result.outer().size() - 2], result.outer().back(), result.outer()[0], epsilon)) {
 //		result.outer().pop_back();
-//		result.outer().push_back(result.outer()[0]); // ±£Ö¤Ê×Î²µãÏàÍ¬
+//		result.outer().push_back(result.outer()[0]); // ä¿è¯é¦–å°¾ç‚¹ç›¸åŒ
 //	}
 //	if (isCollinear(result.outer().back(), result.outer()[0], result.outer()[1], epsilon)) {
 //		result.outer().erase(result.outer().begin());
@@ -222,7 +222,7 @@ libnfporb::polygon_t GeometryConvert::boost2LibNfpPolygon(const polygon_t& polyg
 //}
 
 polygon_t GeometryConvert::libNfp2BoostPolygon(const libnfporb::nfp_t& nfp) const {
-	// ÎŞÄÚ»· nfp.size() == 1
+	// æ— å†…ç¯ nfp.size() == 1
 	libnfporb::polygon_t nfpPoly;
 	for (const auto& pt : nfp.front()) {
 		nfpPoly.outer().push_back(pt);

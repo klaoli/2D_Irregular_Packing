@@ -12,27 +12,27 @@
 namespace MyNest
 {
 	struct Parameters {
-		// double ת Int, �������Ϊ��������С���ű�����clipper �����ĵ��ö���Ҫ�˸ñ���
+		// double 转 Int, 将坐标变为整数的最小缩放倍数，clipper 函数的调用都需要乘该倍数
 		static constexpr int scaleRate = 1000;
 
-		// ���߿�ˡ��ɾ����߾��� curveTolerance ���ڵ�����㣬���͹����λ�����������
+		// 曲线宽恕，删除与边距离 curveTolerance 以内的坐标点，如果凸多边形会造成面积减少
 		static constexpr double curveTolerance = 0.025;
 		
-		// ���� max double
+		// 常数 max double
 		static constexpr double MAXDOUBLE = std::numeric_limits<double>::max();
 		
-		double minGap = 0;			// �����࣬Ĭ��Ϊ0
-		double polygonScaleRate;	// ����ηŴ���
-		std::string piecePath;		// ������ݵ�·��
-		std::string nfpsPath;		// nfp·��
-		std::string ifpsPath;		// ifr·��
-		std::string resultPath;		 // ���ֽ�����·��
-		double maxRunTime;			 // �㷨�������ʱ��
+		double minGap = 0;			// 零件间距，默认为0
+		double polygonScaleRate;	// 多边形放大倍数
+		std::string piecePath;		// 零件数据的路径
+		std::string nfpsPath;		// nfp路径
+		std::string ifpsPath;		// ifr路径
+		std::string resultPath;		 // 布局结果存放路径
+		double maxRunTime;			 // 算法最大运行时间
 		double maxIteration;
-		size_t orientations;		 // �������ת������
+		size_t orientations;		 // 多边形旋转方向数
 
-		double inc;		// ����ÿ�����ӵı���
-		double dec;		// ����ÿ�μ��ٵı���
+		double inc;		// 板子每次增加的比率
+		double dec;		// 板子每次减少的比率
 	};
 
 
