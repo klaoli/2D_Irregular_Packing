@@ -60,7 +60,7 @@ int Packing::checkNfps()
 
 	static NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
 	static GeometryConvert *converter = GeometryConvert::getInstance();
-
+	static Geometry *geo = Geometry::getInstance();
 	for (int i = 0; i < allRotationPieces.size(); i++)
 	{
 		for (int j = i; j < allRotationPieces.size(); j++)
@@ -71,11 +71,13 @@ int Packing::checkNfps()
 			{
 				// 两种方法构造nfp: 滑动法、闵可夫斯基矢量差方法
 
-				// polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[j].polygon, allRotationPieces[i].polygon);
+				polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[j].polygon, allRotationPieces[i].polygon);
 
-				libnfporb::polygon_t pA = converter->boost2LibNfpPolygon(allRotationPieces[j].polygon);
-				libnfporb::polygon_t pB = converter->boost2LibNfpPolygon(allRotationPieces[i].polygon);
-				polygon_t nfp = nfpGenerator->slideNfp(pA, pB);
+				// libnfporb::polygon_t pA = converter->boost2LibNfpPolygon(allRotationPieces[j].polygon);
+				// libnfporb::polygon_t pB = converter->boost2LibNfpPolygon(allRotationPieces[i].polygon);
+				// polygon_t nfp = nfpGenerator->slideNfp(pA, pB);
+
+				nfp = geo->simplifyPolygon(nfp, 1e-6, 0.1);
 
 				nfpsCache.insert(std::pair<std::string, polygon_t>(nfpKey, nfp));
 			}
@@ -84,10 +86,12 @@ int Packing::checkNfps()
 			if (nfpsCache.find(nfpKey) == nfpsCache.end())
 			{
 
-				// polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[i].polygon, allRotationPieces[j].polygon);
-				libnfporb::polygon_t pA = converter->boost2LibNfpPolygon(allRotationPieces[j].polygon);
-				libnfporb::polygon_t pB = converter->boost2LibNfpPolygon(allRotationPieces[i].polygon);
-				polygon_t nfp = nfpGenerator->slideNfp(pB, pA);
+				polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[i].polygon, allRotationPieces[j].polygon);
+				// libnfporb::polygon_t pA = converter->boost2LibNfpPolygon(allRotationPieces[j].polygon);
+				// libnfporb::polygon_t pB = converter->boost2LibNfpPolygon(allRotationPieces[i].polygon);
+				// polygon_t nfp = nfpGenerator->slideNfp(pB, pA);
+
+				nfp = geo->simplifyPolygon(nfp, 1e-6, 0.1);
 
 				nfpsCache.insert(std::pair<std::string, polygon_t>(nfpKey, nfp));
 			}

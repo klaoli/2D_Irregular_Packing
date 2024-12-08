@@ -8,21 +8,20 @@
 
 #include "libnfporb-master/src/geometry.hpp"
 
-
-namespace MyNest {
+namespace MyNest
+{
 	using Angle = double;
 	constexpr double PI = 3.14159265358979323846;
 
 	namespace bg = boost::geometry;
 	// n 维点坐标
-	template<size_t dimension = 2>
+	template <size_t dimension = 2>
 	using point_base = bg::model::point<double, dimension, bg::cs::cartesian>;
 
-
 	/*****************************
-		* 以下定义全部针对二维点坐标 *
-		******************************/
-		// 二维坐标点
+	 * 以下定义全部针对二维点坐标 *
+	 ******************************/
+	// 二维坐标点
 	using point_t = bg::model::d2::point_xy<double>;
 
 	// 曲线
@@ -32,7 +31,7 @@ namespace MyNest {
 	using polygon_t = bg::model::polygon<point_t, false, true>;
 
 	// 环（逆时针，起点=终点）
-	//using ring_t = bg::model::ring<point_t, false, true>;
+	// using ring_t = bg::model::ring<point_t, false, true>;
 	using ring_t = polygon_t::ring_type;
 
 	// 点集合
@@ -56,44 +55,64 @@ namespace MyNest {
 	using Path = ClipperLib::Path;
 	using Paths = ClipperLib::Paths;
 
-	class GeometryConvert {
+	class GeometryConvert
+	{
 	public:
 		static GeometryConvert *geometryConverter;
-		static GeometryConvert* getInstance();
+		static GeometryConvert *getInstance();
 
 		// clipper lib to boost lib
-		point_t      clipper2BoostPoint(const IntPoint &point) const;
-		linestring_t clipper2BoostLine(const Path &path)       const;
-		ring_t       clipper2BoostRing(const Path &path)       const;
-		polygon_t    clipper2BoostPolygon(const Paths &poly)   const;
+		point_t clipper2BoostPoint(const IntPoint &point) const;
+		linestring_t clipper2BoostLine(const Path &path) const;
+		ring_t clipper2BoostRing(const Path &path) const;
+		polygon_t clipper2BoostPolygon(const Paths &poly) const;
+		polygon_t clipperNfp2Boost(const Paths &poly) const;
 
 		// boost lib to clipper lib
-		IntPoint boost2ClipperPoint(const point_t &point)     const;
-		Path     boost2ClipperLine(const linestring_t &path)  const;
-		Path     boost2ClipperRing(const ring_t &path)        const;
-		Paths    boost2ClipperPolygon(const polygon_t &poly)  const;
+		IntPoint boost2ClipperPoint(const point_t &point) const;
+		Path boost2ClipperLine(const linestring_t &path) const;
+		Path boost2ClipperRing(const ring_t &path) const;
+		Paths boost2ClipperPolygon(const polygon_t &poly) const;
 
 		// libnfporb to boost lib
-		point_t libNfp2BoostPoint(const libnfporb::point_t &p)        const;
-		linestring_t libNfp2BoostLine(const libnfporb::linestring_t&) const;
-		ring_t libNfp2BoostRing(const libnfporb::polygon_t::ring_type&) const;
-		polygon_t libNfp2BoostPolygon(const libnfporb::polygon_t&)  const;
+		point_t libNfp2BoostPoint(const libnfporb::point_t &p) const;
+		linestring_t libNfp2BoostLine(const libnfporb::linestring_t &) const;
+		ring_t libNfp2BoostRing(const libnfporb::polygon_t::ring_type &) const;
+		polygon_t libNfp2BoostPolygon(const libnfporb::polygon_t &) const;
 
-		polygon_t libNfp2BoostPolygon(const libnfporb::nfp_t&) const;
+		polygon_t libNfp2BoostPolygon(const libnfporb::nfp_t &) const;
 
 		// boost lib to libnfporb
-		libnfporb::point_t boost2LibNfpPoint(const point_t &p)        const;
-		libnfporb::linestring_t boost2LibNfp2Line(const linestring_t&) const;
+		libnfporb::point_t boost2LibNfpPoint(const point_t &p) const;
+		libnfporb::linestring_t boost2LibNfp2Line(const linestring_t &) const;
 		libnfporb::polygon_t::ring_type boost2LibNfpRing(const ring_t &) const;
-		libnfporb::polygon_t boost2LibNfpPolygon(const polygon_t&) const;
+		libnfporb::polygon_t boost2LibNfpPolygon(const polygon_t &) const;
+
+		bool isAlmostCollinear(const point_t &p1, const point_t &p2, const point_t &p3, double epsilon = 1e-6);
+		double perpendicularDistance(const point_t &point, const point_t &line_start, const point_t &line_end);
+		polygon_t simplifyPolygon(const polygon_t &polygon, double epsilon_collinearity, double epsilon_distance);
 
 	private:
 		GeometryConvert();
-		GeometryConvert(const GeometryConvert&) = delete;
-		void operator=(const GeometryConvert&) = delete;
+		GeometryConvert(const GeometryConvert &) = delete;
+		void operator=(const GeometryConvert &) = delete;
+	};
+
+	class Geometry
+	{
+	public:
+		static Geometry *geometry;
+		static Geometry *getInstance();
+
+		bool isAlmostCollinear(const point_t &p1, const point_t &p2, const point_t &p3, double epsilon = 1e-6);
+		double perpendicularDistance(const point_t &point, const point_t &line_start, const point_t &line_end);
+		polygon_t simplifyPolygon(const polygon_t &polygon, double epsilon_collinearity, double epsilon_distance);
+
+	private:
+		Geometry();
+		Geometry(const Geometry &) = delete;
+		void operator=(const Geometry &) = delete;
 	};
 }
 
-
 #endif // GEOMETRY_H
-

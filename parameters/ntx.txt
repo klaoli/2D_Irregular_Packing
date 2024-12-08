@@ -1,0 +1,11 @@
+﻿minGap = 0
+polygonScaleRate = 1.0
+piecePath = ../data/ntx.txt
+nfpsPath = ../nfpsCache/ntx.csv
+ifpsPath = ../ifpsCache/ntx.csv
+resultPath = ../result/ntx.svg
+maxRunTime = 2400
+maxIteration = 100
+orientations = 2
+inc = 0.01
+dec = 0.04
