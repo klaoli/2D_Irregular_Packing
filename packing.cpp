@@ -160,6 +160,7 @@ point_t Packing::findMostLeftPoint(std::vector<ring_t> &finalNfp)
 
 double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &placedVectors)
 {
+	placedVectors.clear();
 	const auto &_pieces = piecesCache[0];
 	for (int i = 0; i < _pieces.size(); ++i)
 	{

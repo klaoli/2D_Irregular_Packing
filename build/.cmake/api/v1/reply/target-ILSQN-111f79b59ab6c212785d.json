@@ -31,7 +31,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 20,
+				"line" : 17,
 				"parent" : 0
 			}
 		]
@@ -42,9 +42,6 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : " "
-				},
-				{
 					"backtrace" : 2,
 					"fragment" : "-fopenmp"
 				},
@@ -53,6 +50,14 @@
 				}
 			],
 			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					1
+				],
+				"standard" : "17"
+			},
 			"sourceIndexes" : 
 			[
 				0,
@@ -79,11 +84,11 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so",
+				"fragment" : "/usr/lib/gcc/x86_64-linux-gnu/11/libgomp.so",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/usr/lib/x86_64-linux-gnu/libpthread.so",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libpthread.a",
 				"role" : "libraries"
 			}
 		],
@@ -129,7 +134,19 @@
 				18,
 				19,
 				20,
-				21
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33
 			]
 		}
 	],
@@ -229,6 +246,66 @@
 		{
 			"backtrace" : 1,
 			"path" : "lbfgs.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/find_feasible.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/search_start.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/select_next.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/slide.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/touching_point.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/algo/trim_vector.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/geometry.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/history.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/libnfporb.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/svg.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/translation_vector.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "libnfporb-master/src/wkt.hpp",
 			"sourceGroupIndex" : 1
 		},
 		{

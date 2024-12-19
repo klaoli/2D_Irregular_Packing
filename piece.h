@@ -25,8 +25,8 @@ namespace MyNest
 								   // 如果签名面积为负，多边形的顶点是顺时针顺序的。
 
 	public:
-		int id;			   // 零件编号（从1开始）
-		int typeId;		   // 零件类型号（从1开始）
+		int id;			   // 零件编号（从0开始）
+		int typeId;		   // 零件类型号（从0开始）
 		polygon_t polygon; // 多边形
 		Angle rotation;	   // 旋转角度（0~360）
 		double area;	   // 零件面积

@@ -89,9 +89,9 @@ bool DataLoader::loadPieces()
 		bg::correct(polygon); // 形成闭合多边形, 多边形逆时针化
 
 		piece.id = i;
-		std::cout << "简化前后多边形定点数：" << polygon.outer().size() << ",";
+		// std::cout << "简化前后多边形定点数：" << polygon.outer().size() << ",";
 		polygon_t simlipfiedPolygon = geo->simplifyPolygon(polygon, 0.01, 0.1);
-		std::cout << simlipfiedPolygon.outer().size() << std::endl;
+		// std::cout << simlipfiedPolygon.outer().size() << std::endl;
 		piece.polygon = simlipfiedPolygon;
 		piece.area = bg::area(simlipfiedPolygon);
 		piece.getEnvelope();

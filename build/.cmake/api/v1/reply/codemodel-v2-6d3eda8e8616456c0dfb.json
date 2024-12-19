@@ -6,9 +6,10 @@
 			[
 				{
 					"build" : ".",
+					"jsonFile" : "directory-.-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.14"
+						"string" : "3.10"
 					},
 					"projectIndex" : 0,
 					"source" : ".",
@@ -38,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ILSQN::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ILSQN-11148090f2ed764313c8.json",
+					"jsonFile" : "target-ILSQN-111f79b59ab6c212785d.json",
 					"name" : "ILSQN",
 					"projectIndex" : 0
 				}
@@ -48,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/algo/llf/2D_Irregular_Packing/build",
-		"source" : "/home/algo/llf/2D_Irregular_Packing"
+		"build" : "/home/llf/Desktop/2D_Irregular_Packing/build",
+		"source" : "/home/llf/Desktop/2D_Irregular_Packing"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 0
+		"minor" : 3
 	}
 }
