@@ -227,8 +227,8 @@ double ILSQN::getOneTotalOverlap(Piece &piece, Vector &vec)
 double ILSQN::costFunction(void *instance, const Eigen::VectorXd &x, Eigen::VectorXd &grad)
 {
 	double ret = 0.0;
-	static int numPieces = x.size() / 2;
-	static std::vector<Vector> vectors(numPieces);
+	int numPieces = x.size() / 2;
+	std::vector<Vector> vectors(numPieces);
 
 	for (int i = 0, j = 0; i < x.size(); i += 2, ++j)
 	{
@@ -319,13 +319,21 @@ void ILSQN::findBestPosition(int idx)
 		}
 
 		std::vector<point_t> intersectPoints;
+		std::vector<box_t> nfpBoxs;
+		for (int i = 0; i < nfps.size(); ++i) {
+			box_t box;
+			bg::envelope(nfps[i], box);	
+			nfpBoxs.push_back(box);		
+		}
 		for (int i = 0; i < nfps.size(); ++i)
 		{
 			intersectPoints.insert(intersectPoints.end(), nfps[i].outer().begin(), nfps[i].outer().end());
 			for (int j = i + 1; j < nfps.size(); ++j)
-			{
+			{	
+				if (!boxIsOverlap(nfpBoxs[i], nfpBoxs[j])) {
+					continue;
+				}
 				std::vector<point_t> output;
-
 				bg::intersection(nfps[i], nfps[j], output);
 				if(!output.empty()){
 					intersectPoints.insert(intersectPoints.end(), output.begin(), output.end());
@@ -386,6 +394,9 @@ void ILSQN::movePolygon(int idx)
 		nfps.push_back(ifpsCache[key]);
 		for (int i = 0; i < lbfgsPieces.size(); ++i)
 		{
+			if(lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE) {
+				continue;
+			}			
 			key = getNfpKey(lbfgsPieces[i], piece);
 			const polygon_t &nfp = nfpsCache[key];
 			polygon_t transNfp;
@@ -397,7 +408,7 @@ void ILSQN::movePolygon(int idx)
 		std::vector<point_t> middlePoints;
 		for (int i = 0; i < nfps.size(); ++i)
 		{
-			middlePoints.insert(middlePoints.end(), nfps[i].outer().begin(), nfps[i].outer().end());
+			middlePoints.insert(middlePoints.end(), nfps[i].outer().begin(), nfps[i].outer().end() - 1);
 			for (int j = 0; j < nfps[i].outer().size() - 1; ++j)
 			{
 				point_t p(
@@ -428,7 +439,7 @@ void ILSQN::movePolygon(int idx)
 			std::default_random_engine rng(rd()); 
 			std::shuffle(numbers.begin(), numbers.end(), rng);
 
-			for (int j = 0; j < 800; ++j)
+			for (int j = 0; j <= 800; ++j)
 			{
 				int i = numbers[j];
 				Vector vec(middlePoints[i].x(), middlePoints[i].y());
@@ -449,10 +460,10 @@ void ILSQN::movePolygon(int idx)
 void ILSQN::swapPolygons(int idx1, int idx2)
 {
 	lbfgsVectors[idx2].x = Parameters::MAXDOUBLE, lbfgsVectors[idx2].y = Parameters::MAXDOUBLE;
-	findBestPosition(idx1);
-	findBestPosition(idx2);
-	// movePolygon(idx1);
-	// movePolygon(idx2);
+	// findBestPosition(idx1);
+	// findBestPosition(idx2);
+	movePolygon(idx1);
+	movePolygon(idx2);
 }
 
 int ILSQN::generateRandomNumber(int n)
@@ -545,7 +556,7 @@ double ILSQN::run()
 {
 	currentLength = getIniaialSolution(); // 生成初始布局
 	currentBin.max_corner().set<0>(currentLength);
-	std::cout << "初始利用率为 = " << allPiecesArea / bg::area(currentBin) << std::endl;
+	// std::cout << "初始利用率为 = " << allPiecesArea / bg::area(currentBin) << std::endl;
 
 	bestPieces = currentPieces;
 	bestVectors = currentVectors;
@@ -570,9 +581,9 @@ double ILSQN::run()
 
 		if (feasible)
 		{
-			std::cout << "当前利用率 = " << allPiecesArea / bg::area(currentBin) << std::endl;
-			static DataWrite *datawriter = DataWrite::getInstance();
-			datawriter->plotPieces(currentBin, currentPieces, currentVectors);
+			// std::cout << "当前利用率 = " << allPiecesArea / bg::area(currentBin) << std::endl;
+			// static DataWrite *datawriter = DataWrite::getInstance();
+			// datawriter->plotPieces(currentBin, currentPieces, currentVectors);
 
 			bestPieces = currentPieces;
 			bestVectors = currentVectors;
@@ -597,6 +608,8 @@ double ILSQN::run()
 		end = std::chrono::steady_clock::now();
 		time_taken = end - start;
 	}
+	static DataWrite *datawriter = DataWrite::getInstance();
+	datawriter->plotPieces(bestBin, bestPieces, bestVectors);
 	std::cout << "达到最大搜索时间，最好利用率 = " << allPiecesArea / bg::area(bestBin) << std::endl;
 	return allPiecesArea / bg::area(bestBin);
 }

@@ -25,7 +25,6 @@ DataLoader *DataLoader::getInstance()
 
 bool DataLoader::loadPieces()
 {
-
 	std::string line;
 	std::vector<double> v1, v2;			 // 存储第一行数据、第二行数据
 	std::vector<std::vector<double>> v3; // 第三行到最后一行

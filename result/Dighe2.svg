@@ -4,15 +4,15 @@
 <svg width="100%" height="100%" version="1.1"
 xmlns="http://www.w3.org/2000/svg"
 xmlns:xlink="http://www.w3.org/1999/xlink">
-<rect x="0" y="71.826" width="800" height="656.348" style="fill-opacity:0;fill:rgb(255,255,255);stroke:rgb(0,0,0);stroke-width:1"/>
-<g fill-rule="evenodd"><path d="M 799.979,390.32 L 799.979,71.8941 L 579.03,71.8941 L 501.048,253.852 L 455.559,377.323 L 533.541,461.804 L 605.024,526.789 L 799.979,390.32 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 353.284,682.683 L 275.302,598.203 L 320.792,474.732 L 34.858,533.218 L 21.861,695.68 L 15.3625,728.173 L 353.284,682.683 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 799.689,391.118 L 604.734,527.586 L 637.227,722.541 L 799.689,722.541 L 799.689,391.118 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 236.56,479.849 L 477.005,408.365 L 405.521,343.38 L 67.5996,388.87 L 41.6056,531.837 L 236.56,479.849 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 388.608,325.635 L 206.65,143.678 L 115.671,143.678 L 102.674,384.122 L 388.608,325.635 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 601.975,533.196 L 361.531,604.68 L 361.531,728.151 L 634.468,728.151 L 601.975,533.196 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 51.9881,474.733 L 64.9851,312.27 L 77.9821,71.8261 L 0.000185268,71.8261 L 0.000185268,487.73 L 51.9881,474.733 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 519.562,194.201 L 259.623,194.201 L 441.58,376.159 L 519.562,194.201 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 510.533,436.904 L 315.578,488.892 L 296.082,560.375 L 510.533,560.375 L 510.533,436.904 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 96.8302,247.3 L 122.824,104.333 L 129.323,71.841 L 77.3347,84.838 L 77.3347,318.784 L 96.8302,247.3 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<rect x="5.68434e-14" y="82.1271" width="800" height="635.746" style="fill-opacity:0;fill:rgb(255,255,255);stroke:rgb(0,0,0);stroke-width:1"/>
+<g fill-rule="evenodd"><path d="M 706.575,391.475 L 706.575,83.0444 L 492.561,83.0444 L 417.027,259.291 L 372.966,378.886 L 448.5,460.715 L 517.74,523.66 L 706.575,391.475 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 799.995,673.794 L 724.461,591.965 L 768.523,472.369 L 491.564,529.02 L 478.975,686.383 L 472.68,717.855 L 799.995,673.794 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 189.859,390.9 L 1.02374,523.085 L 32.4963,711.92 L 189.859,711.92 L 189.859,390.9 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 225.604,214.357 L 458.501,145.118 L 389.262,82.1725 L 61.9471,126.234 L 36.7691,264.713 L 225.604,214.357 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 474.461,522.218 L 298.215,345.972 L 210.091,345.972 L 197.502,578.869 L 474.461,522.218 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 441.196,529.037 L 208.3,598.276 L 208.3,717.872 L 472.669,717.872 L 441.196,529.037 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 757.001,472.431 L 769.59,315.068 L 782.179,82.1711 L 706.645,82.1711 L 706.645,485.02 L 757.001,472.431 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 430.92,226.864 L 179.14,226.864 L 355.386,403.11 L 430.92,226.864 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 208.219,260.418 L 19.3839,310.774 L 0.500327,380.014 L 208.219,380.014 L 208.219,260.418 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 22.9242,252.814 L 48.1022,114.334 L 54.3968,82.8618 L 4.04066,95.4508 L 4.04066,322.053 L 22.9242,252.814 z " style="fill-opacity:0.3;fill:rgb(250,150,50);stroke:rgb(0,0,0);stroke-width:1"/></g>
 </svg>
