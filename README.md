@@ -28,6 +28,6 @@
   (3) mkdir build && cd build<br>
   (4) cmake ..<br>
   (5) make<br>
-  (6) ./ILSQN Jakobs1<br>
+  (6) ./ILSQN<br>
 
   Email：lilinfeng3983@163.com
