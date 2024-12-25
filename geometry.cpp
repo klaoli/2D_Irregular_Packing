@@ -134,6 +134,7 @@ polygon_t GeometryConvert::clipperNfp2Boost(const Paths &poly) const
 
 	retPoly.outer() = clipper2BoostRing(poly[biggestIndex]);
 
+	// 暂时去掉孔洞，仅保留最大的外环
 	// retPoly.inners().reserve(poly.size() - 1);
 	// for (int i = 0; i < poly.size() && i != biggestIndex; ++i)
 	// {
@@ -273,7 +274,7 @@ bool Geometry::isAlmostCollinear(const point_t &p1, const point_t &p2, const poi
 }
 double Geometry::perpendicularDistance(const point_t &point, const point_t &start, const point_t &end)
 {
-	static double epsilon = 1e-6;
+	static const double epsilon = 1e-6;
 	double x1 = start.x(), y1 = start.y();
 	double x2 = end.x(), y2 = end.y();
 	double x0 = point.x(), y0 = point.y();
@@ -329,4 +330,86 @@ polygon_t Geometry::simplifyPolygon(const polygon_t &polygon, double epsilonColl
 	finalPolygon.outer().push_back(simplifiedPolygon.outer().back());
 
 	return finalPolygon;
+}
+
+box_t Geometry::getEnvelope(const polygon_t &polygon)
+{
+	double minX = polygon.outer().front().x(), maxX = polygon.outer().front().x(),
+		   minY = polygon.outer().front().y(), maxY = polygon.outer().front().y();
+	for (int i = 1; i < polygon.outer().size(); ++i)
+	{
+		if (polygon.outer()[i].x() < minX)
+		{
+			minX = polygon.outer()[i].x();
+		}
+		else if (polygon.outer()[i].x() > maxX)
+		{
+			maxX = polygon.outer()[i].x();
+		}
+
+		if (polygon.outer()[i].y() < minY)
+		{
+			minY = polygon.outer()[i].y();
+		}
+		else if (polygon.outer()[i].y() > maxY)
+		{
+			maxY = polygon.outer()[i].y();
+		}
+	}
+	return box_t(point_t(minX, minY), point_t(maxX, maxY));
+}
+
+double Geometry::signedArea(const polygon_t &polygon)
+{
+	if (polygon.outer().size() < 3)
+		return 0.0;
+
+	double area = 0.0;
+	for (size_t i = 0; i < polygon.outer().size() - 1; ++i)
+	{
+		area += polygon.outer()[i].x() * polygon.outer()[i + 1].y();
+		area -= polygon.outer()[i + 1].x() * polygon.outer()[i].y();
+	}
+
+	area += polygon.outer().back().x() * polygon.outer().front().y();
+	area -= polygon.outer().front().x() * polygon.outer().back().y();
+
+	return area / 2.0;
+}
+
+// 如果签名面积为负，多边形的顶点是顺时针顺序的。
+polygon_t Geometry::translate(const polygon_t &polygon, double dx, double dy)
+{
+	polygon_t output;
+	bg::strategy::transform::translate_transformer<double, 2, 2> translate(dx, dy);
+	bg::transform(polygon, output, translate);
+	return output;
+}
+
+polygon_t Geometry::rotate(const polygon_t &polygon, Angle angle)
+{
+	polygon_t output;
+
+	bg::strategy::transform::rotate_transformer<bg::degree, double, 2, 2> rotate_strategy(angle);
+
+	bg::transform(polygon, output, rotate_strategy);
+
+	return output;
+}
+
+polygon_t Geometry::offset(const polygon_t &polygon, double scale)
+{
+	GeometryConvert *converter = GeometryConvert::getInstance();
+	Paths paths = converter->boost2ClipperPolygon(polygon);
+
+	Paths output;
+	// JoinType = jtMiter，超出倍数截断尖角，MiterLimit = 2.0
+	// JoinType = jtRound，使用弧线包裹尖角, ArcTolerance = Config::curveTolerance * Config::scaleRate
+	ClipperLib::ClipperOffset co(2.0, Parameters::curveTolerance * Parameters::scaleRate);
+	co.AddPaths(paths, ClipperLib::JoinType::jtRound, ClipperLib::EndType::etClosedPolygon);
+	co.Execute(output, scale * Parameters::scaleRate);
+
+	assert(output.size() == 1);
+
+	return converter->clipper2BoostPolygon(output);
 }

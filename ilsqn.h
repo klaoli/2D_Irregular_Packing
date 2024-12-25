@@ -22,7 +22,6 @@ namespace MyNest
 		static double getPenetrationDepth(Piece &p1, Piece &p2, Vector &v1, Vector &v2, Vector &seperateVector);
 		static double getPenetrationDepth(Piece &p, Vector &vec, Vector &seperateVector);
 		static double costFunction(void *instance, const Eigen::VectorXd &x, Eigen::VectorXd &g);
-
 		inline int generateRandomNumber(int n);
 		// 生成指定范围内的随机双精度浮点数
 		inline double generateRandomDouble(double min, double max);

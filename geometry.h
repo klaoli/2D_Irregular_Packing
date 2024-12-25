@@ -88,10 +88,6 @@ namespace MyNest
 		libnfporb::polygon_t::ring_type boost2LibNfpRing(const ring_t &) const;
 		libnfporb::polygon_t boost2LibNfpPolygon(const polygon_t &) const;
 
-		bool isAlmostCollinear(const point_t &p1, const point_t &p2, const point_t &p3, double epsilon = 1e-6);
-		double perpendicularDistance(const point_t &point, const point_t &line_start, const point_t &line_end);
-		polygon_t simplifyPolygon(const polygon_t &polygon, double epsilon_collinearity, double epsilon_distance);
-
 	private:
 		GeometryConvert();
 		GeometryConvert(const GeometryConvert &) = delete;
@@ -107,7 +103,13 @@ namespace MyNest
 		bool isAlmostCollinear(const point_t &p1, const point_t &p2, const point_t &p3, double epsilon = 1e-6);
 		double perpendicularDistance(const point_t &point, const point_t &line_start, const point_t &line_end);
 		polygon_t simplifyPolygon(const polygon_t &polygon, double epsilon_collinearity, double epsilon_distance);
-
+		box_t getEnvelope(const polygon_t &polygon);					   // 获取零件的外界举行<width, height>
+		point_t grivaty(const polygon_t &polygon);						   // 计算零件重心
+		double signedArea(const polygon_t &polygon);					   // "签名面积",如果签名面积为正，多边形的顶点是逆时针顺序的
+																		   // 如果签名面积为负，多边形的顶点是顺时针顺序的。
+		polygon_t translate(const polygon_t &polygon, double x, double y); // 平移零件
+		polygon_t rotate(const polygon_t &polygon, Angle angle);		   // 旋转零件
+		polygon_t offset(const polygon_t &polygon, double scale);		   // 放缩零件
 	private:
 		Geometry();
 		Geometry(const Geometry &) = delete;

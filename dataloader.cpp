@@ -75,7 +75,7 @@ bool DataLoader::loadPieces()
 	bg::set<bg::max_corner, 0>(bin, v2[0] * parameters.polygonScaleRate);
 	bg::set<bg::max_corner, 1>(bin, v2[1] * parameters.polygonScaleRate);
 	int typeId = 0;
-	static Geometry *geo = Geometry::getInstance();
+	Geometry *geo = Geometry::getInstance();
 	for (int i = 0; i < v3.size(); ++i)
 	{
 		Piece piece;
@@ -93,7 +93,7 @@ bool DataLoader::loadPieces()
 		// std::cout << simlipfiedPolygon.outer().size() << std::endl;
 		piece.polygon = simlipfiedPolygon;
 		piece.area = bg::area(simlipfiedPolygon);
-		piece.getEnvelope();
+		piece.bounding = geo->getEnvelope(piece.polygon);
 		if (i == 0)
 		{
 			piece.typeId = typeId;
@@ -162,51 +162,45 @@ bool DataLoader::loadNfps()
 	return nfpsCache.size() > 0;
 }
 
-bool DataLoader::loadIfrs()
-{
-	std::ifstream fin(parameters.ifpsPath, std::ios::in);
-	if (!fin)
-	{
-		std::cerr << "Error: Ifrs failed to open file." << std::endl;
-		return false;
-	}
-
-	std::string line;
-
-	std::getline(fin, line); // 跳过文件第一行内容
-	while (std::getline(fin, line))
-	{
-		std::string str;
-		std::stringstream ss(line);
-		std::vector<std::string> lineArray;
-
-		while (std::getline(ss, str, ','))
-		{
-			lineArray.push_back(str);
-		}
-
-		double t;
-		std::istringstream iss;
-		std::vector<double> values;
-		polygon_t ifp;
-
-		iss.str(lineArray[1]);
-		while (iss >> t)
-		{
-			values.push_back(t);
-		}
-
-		for (int j = 0; j < values.size(); j += 2)
-		{
-			ifp.outer().push_back(point_t(values[j], values[j + 1])); // �⻷
-		}
-		ifpsCache.insert(std::pair<std::string, polygon_t>(lineArray[0], ifp));
-		box_t ifr;
-		bg::envelope(ifp, ifr);
-		ifrsCache.insert(std::pair<std::string, box_t>(lineArray[0], ifr));
-	}
-	return ifpsCache.size() > 0 && ifrsCache.size() > 0;
-}
+// bool DataLoader::loadIfrs()
+// {
+// 	std::ifstream fin(parameters.ifpsPath, std::ios::in);
+// 	if (!fin)
+// 	{
+// 		std::cerr << "Error: Ifrs failed to open file." << std::endl;
+// 		return false;
+// 	}
+// 	std::string line;
+// 	std::getline(fin, line); // 跳过文件第一行内容
+// 	while (std::getline(fin, line))
+// 	{
+// 		std::string str;
+// 		std::stringstream ss(line);
+// 		std::vector<std::string> lineArray;
+// 		while (std::getline(ss, str, ','))
+// 		{
+// 			lineArray.push_back(str);
+// 		}
+// 		double t;
+// 		std::istringstream iss;
+// 		std::vector<double> values;
+// 		polygon_t ifp;
+// 		iss.str(lineArray[1]);
+// 		while (iss >> t)
+// 		{
+// 			values.push_back(t);
+// 		}
+// 		for (int j = 0; j < values.size(); j += 2)
+// 		{
+// 			ifp.outer().push_back(point_t(values[j], values[j + 1])); // �⻷
+// 		}
+// 		ifpsCache.insert(std::pair<std::string, polygon_t>(lineArray[0], ifp));
+// 		box_t ifr;
+// 		bg::envelope(ifp, ifr);
+// 		ifrsCache.insert(std::pair<std::string, box_t>(lineArray[0], ifr));
+// 	}
+// 	return ifpsCache.size() > 0 && ifrsCache.size() > 0;
+// }
 
 inline std::string trim(const std::string &str)
 { // 修整字符串前后的空白字符，包括空格、制表符和换行符

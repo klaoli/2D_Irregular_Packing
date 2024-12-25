@@ -307,7 +307,8 @@ void ILSQN::findBestPosition(int idx)
 		nfps.push_back(ifpsCache[key]);
 		for (int i = 0; i < lbfgsPieces.size(); ++i)
 		{
-			if(lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE) {
+			if (lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE)
+			{
 				continue;
 			}
 			key = getNfpKey(lbfgsPieces[i], piece);
@@ -320,22 +321,25 @@ void ILSQN::findBestPosition(int idx)
 
 		std::vector<point_t> intersectPoints;
 		std::vector<box_t> nfpBoxs;
-		for (int i = 0; i < nfps.size(); ++i) {
+		for (int i = 0; i < nfps.size(); ++i)
+		{
 			box_t box;
-			bg::envelope(nfps[i], box);	
-			nfpBoxs.push_back(box);		
+			bg::envelope(nfps[i], box);
+			nfpBoxs.push_back(box);
 		}
 		for (int i = 0; i < nfps.size(); ++i)
 		{
-			intersectPoints.insert(intersectPoints.end(), nfps[i].outer().begin(), nfps[i].outer().end());
+			intersectPoints.insert(intersectPoints.end(), nfps[i].outer().begin(), nfps[i].outer().end() - 1);
 			for (int j = i + 1; j < nfps.size(); ++j)
-			{	
-				if (!boxIsOverlap(nfpBoxs[i], nfpBoxs[j])) {
+			{
+				if (!boxIsOverlap(nfpBoxs[i], nfpBoxs[j]))
+				{
 					continue;
 				}
 				std::vector<point_t> output;
 				bg::intersection(nfps[i], nfps[j], output);
-				if(!output.empty()){
+				if (!output.empty())
+				{
 					intersectPoints.insert(intersectPoints.end(), output.begin(), output.end());
 				}
 			}
@@ -343,7 +347,7 @@ void ILSQN::findBestPosition(int idx)
 		// std::cout << "points size=" << intersectPoints.size() << std::endl;
 		if (intersectPoints.size() <= 800)
 		{
-			for (int i = 0; i <intersectPoints.size(); ++i)
+			for (int i = 0; i < intersectPoints.size(); ++i)
 			{
 				Vector vec(intersectPoints[i].x(), intersectPoints[i].y());
 				double overlap = getOneTotalOverlap(piece, vec);
@@ -358,8 +362,8 @@ void ILSQN::findBestPosition(int idx)
 		{
 			std::vector<int> numbers(intersectPoints.size());
 			std::iota(numbers.begin(), numbers.end(), 0);
-			std::random_device rd;				  
-			std::default_random_engine rng(rd()); 
+			std::random_device rd;
+			std::default_random_engine rng(rd());
 			std::shuffle(numbers.begin(), numbers.end(), rng);
 
 			for (int j = 0; j <= 800; ++j)
@@ -373,7 +377,7 @@ void ILSQN::findBestPosition(int idx)
 					vecVectors[k] = vec;
 				}
 			}
-		}	
+		}
 	}
 	int index = std::min_element(overlaps.begin(), overlaps.end()) - overlaps.begin();
 	lbfgsPieces[idx] = piecesCache[index][idx];
@@ -394,9 +398,10 @@ void ILSQN::movePolygon(int idx)
 		nfps.push_back(ifpsCache[key]);
 		for (int i = 0; i < lbfgsPieces.size(); ++i)
 		{
-			if(lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE) {
+			if (lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE)
+			{
 				continue;
-			}			
+			}
 			key = getNfpKey(lbfgsPieces[i], piece);
 			const polygon_t &nfp = nfpsCache[key];
 			polygon_t transNfp;
@@ -435,8 +440,8 @@ void ILSQN::movePolygon(int idx)
 		{
 			std::vector<int> numbers(middlePoints.size());
 			std::iota(numbers.begin(), numbers.end(), 0);
-			std::random_device rd;				  
-			std::default_random_engine rng(rd()); 
+			static std::random_device rd;
+			static std::default_random_engine rng(rd());
 			std::shuffle(numbers.begin(), numbers.end(), rng);
 
 			for (int j = 0; j <= 800; ++j)
@@ -468,15 +473,15 @@ void ILSQN::swapPolygons(int idx1, int idx2)
 
 int ILSQN::generateRandomNumber(int n)
 {
-	static std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-	std::uniform_int_distribution<int> distribution(0, n - 1);
-	return distribution(rng);
+	static std::random_device rd;
+	static std::uniform_int_distribution<int> distribution(0, n - 1);
+	return distribution(rd);
 }
 
 double ILSQN::generateRandomDouble(double min, double max)
 {
-	std::random_device rd;								  // 随机数种子，仅用于种子生成
-	std::mt19937 gen(rd());								  // Mersenne Twister 生成器
+	static std::random_device rd;						  // 随机数种子，仅用于种子生成
+	static std::mt19937 gen(rd());						  // Mersenne Twister 生成器
 	std::uniform_real_distribution<double> dis(min, max); // 均匀分布
 
 	return dis(gen); // 返回生成的随机数
@@ -581,7 +586,7 @@ double ILSQN::run()
 
 		if (feasible)
 		{
-			// std::cout << "当前利用率 = " << allPiecesArea / bg::area(currentBin) << std::endl;
+			std::cout << "当前利用率 = " << allPiecesArea / bg::area(currentBin) << std::endl;
 			// static DataWrite *datawriter = DataWrite::getInstance();
 			// datawriter->plotPieces(currentBin, currentPieces, currentVectors);
 

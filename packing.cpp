@@ -22,22 +22,27 @@ Packing *Packing::getInstance()
 
 void Packing::preprocess()
 {
-	// 放缩  简化  平移到原点
+	// 放缩 平移到原点
 	std::sort(pieces.begin(), pieces.end(), [&](Piece &l, Piece &r)
 			  { return l.area > r.area; });
 	piecesCache.clear();
 	int deltaAngle = 360 / parameters.orientations;
+	Geometry *geo = Geometry::getInstance();
+
 	for (int angle = 0; angle < 360; angle += deltaAngle)
 	{
 		std::vector<Piece> temp;
 		for (auto piece : pieces)
 		{
-			piece.rotate((double)angle);
-			piece.offset(parameters.minGap);
-			piece.clean();
+			piece.polygon = geo->rotate(piece.polygon, (double)angle);	   // 旋转
+			piece.polygon = geo->offset(piece.polygon, parameters.minGap); // 伸缩
 			double dx = -piece.polygon.outer().front().x();
 			double dy = -piece.polygon.outer().front().y();
-			piece.translate(dx, dy);
+			piece.polygon = geo->translate(piece.polygon, dx, dy); // 平移
+
+			piece.bounding = geo->getEnvelope(piece.polygon); // 外接矩形
+			piece.area = bg::area(piece.polygon);			  // 面积
+			piece.rotation = angle;
 			temp.push_back(piece);
 		}
 		piecesCache.push_back(temp);
@@ -58,9 +63,9 @@ int Packing::checkNfps()
 			allRotationPieces.push_back(piecesCache[i][j]);
 	}
 
-	static NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
-	static GeometryConvert *converter = GeometryConvert::getInstance();
-	static Geometry *geo = Geometry::getInstance();
+	NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
+	GeometryConvert *converter = GeometryConvert::getInstance();
+	Geometry *geo = Geometry::getInstance();
 	for (int i = 0; i < allRotationPieces.size(); i++)
 	{
 		for (int j = i; j < allRotationPieces.size(); j++)
@@ -97,7 +102,7 @@ int Packing::checkNfps()
 			}
 		}
 	}
-	static DataWrite *dataWriter = DataWrite::getInstance();
+	DataWrite *dataWriter = DataWrite::getInstance();
 	dataWriter->writeNfps(nfpsCache, parameters.nfpsPath);
 	return nfpsCache.size();
 }
@@ -116,7 +121,7 @@ int Packing::checkIfps()
 			allRotationPieces.push_back(piecesCache[i][j]);
 	}
 
-	static NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
+	NoFitPolygon *nfpGenerator = NoFitPolygon::getInstance();
 	for (int i = 0; i < allRotationPieces.size(); ++i)
 	{
 
@@ -131,7 +136,7 @@ int Packing::checkIfps()
 			ifrsCache.insert(std::pair<std::string, box_t>(ifpKey, ifr));
 		}
 	}
-	static DataWrite *dataWriter = DataWrite::getInstance();
+	DataWrite *dataWriter = DataWrite::getInstance();
 	dataWriter->writeNfps(ifpsCache, parameters.ifpsPath);
 	return ifpsCache.size();
 }
@@ -189,7 +194,7 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 		ClipperLib::Clipper clipperUnion;
 		ClipperLib::Clipper clipperDifference;
 		// bin_nfp 转换成 clipper paths，即 clipperBinNfp.
-		static GeometryConvert *converter = GeometryConvert::getInstance();
+		GeometryConvert *converter = GeometryConvert::getInstance();
 		Paths clipperBinNfp = converter->boost2ClipperPolygon(ifp);
 
 		// nfp 转换成 clipper paths, 求并集得到 clipperUnionNfp.
@@ -255,10 +260,12 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 	}
 
 	double minX = Parameters::MAXDOUBLE, maxX = 0;
-	std::vector<polygon_t> nfps;
+	Geometry *geo = Geometry::getInstance();
+
 	for (int i = 0; i < placedPieces.size(); ++i)
 	{
-		placedPieces[i].translate(placedVectors[i].x, placedVectors[i].y);
+		placedPieces[i].polygon = geo->translate(placedPieces[i].polygon, placedVectors[i].x, placedVectors[i].y);
+		placedPieces[i].bounding = geo->getEnvelope(placedPieces[i].polygon);
 		if (placedPieces[i].bounding.min_corner().x() < minX)
 		{
 			minX = placedPieces[i].bounding.min_corner().x();

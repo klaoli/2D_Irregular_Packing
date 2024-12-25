@@ -14,16 +14,6 @@ namespace MyNest
 		Piece();
 		bool operator==(const Piece &p) const; // 重载==
 
-		void translate(double x, double y); // 平移零件
-		void rotate(Angle angle);			// 旋转零件
-		void offset(double scale);			// 放缩零件
-		void clean();						// 简化多边形
-
-		void getEnvelope();		   // 获取零件的外界举行<width, height>
-		point_t grivaty() const;   // 计算零件重心
-		double signedArea() const; // "签名面积",如果签名面积为正，多边形的顶点是逆时针顺序的
-								   // 如果签名面积为负，多边形的顶点是顺时针顺序的。
-
 	public:
 		int id;			   // 零件编号（从0开始）
 		int typeId;		   // 零件类型号（从0开始）
@@ -33,7 +23,7 @@ namespace MyNest
 		box_t bounding;	   // 零件外接矩形
 		bool defect;	   // 是否有缺陷（孔洞）(目前该算法不适用含有孔洞的零件)
 
-		Vector transVector; // 零件的平移向量
+		Vector transVector; // 平移向量
 	};
 }
 #endif // PIECE_H
