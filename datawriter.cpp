@@ -2,6 +2,8 @@
 #include "dataloader.h"
 #include "parameters.h"
 #include <fstream>
+#include <filesystem>
+
 
 using namespace MyNest;
 
@@ -22,6 +24,21 @@ DataWrite *DataWrite::getInstance()
 
 void DataWrite::writeNfps(const std::unordered_map<std::string, polygon_t> &nfpPairs, std::string &filePath) const
 {
+	// 提取目录路径
+	std::filesystem::path dirPath = std::filesystem::path(filePath).parent_path();
+	// 如果目录不存在，则创建目录
+	if (!std::filesystem::exists(dirPath))
+	{
+		try
+		{
+			std::filesystem::create_directories(dirPath); // 创建目录
+		}
+		catch (const std::filesystem::filesystem_error &e)
+		{
+			std::cerr << "Error: Failed to create directories: " << e.what() << std::endl;
+			return;
+		}
+	}
 	std::ofstream outf; // 写入csv文件
 	outf.open(filePath, std::ios::out);
 	if (!outf)
