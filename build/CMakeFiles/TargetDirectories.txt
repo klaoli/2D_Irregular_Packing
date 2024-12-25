@@ -1,3 +1,0 @@
-/home/llf/Desktop/2D_Irregular_Packing/build/CMakeFiles/ILSQN.dir
-/home/llf/Desktop/2D_Irregular_Packing/build/CMakeFiles/edit_cache.dir
-/home/llf/Desktop/2D_Irregular_Packing/build/CMakeFiles/rebuild_cache.dir
