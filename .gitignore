@@ -1,0 +1,41 @@
+# Build directories
+build/
+bin/
+lib/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+*.cmake
+install_manifest.txt
+
+# IDE / OS generated files
+.vscode/
+.vs/
+.idea/
+.DS_Store
+*.suo
+*.user
+
+# Cache and output generated directories
+nfpsCache/
+result/
+
+# Generated logs and statistical results
+*.csv
+*.svg
+*.log
+
+# Images (screenshots)
+*.png
+*.jpg
+*.jpeg
+
+# Compiled objects
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib

@@ -157,7 +157,7 @@ bool DataLoader::loadNfps()
 		{
 			nfp.outer().push_back(point_t(values[j], values[j + 1])); // �⻷
 		}
-		nfpsCache.insert(std::pair<std::string, polygon_t>(lineArray[0], nfp));
+		nfpsCache.emplace(std::stoull(lineArray[0]), nfp);
 	}
 	return nfpsCache.size() > 0;
 }

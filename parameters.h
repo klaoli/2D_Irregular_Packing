@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <limits>
+#include <cstdint>
 #include <unordered_map>
 
 #include "geometry.h"
@@ -40,19 +41,21 @@ namespace MyNest
 	extern box_t bin;
 	extern std::vector<Piece> pieces;
 	extern std::vector<std::vector<Piece>> piecesCache;
-	extern std::unordered_map<std::string, polygon_t> nfpsCache;
-	extern std::unordered_map<std::string, polygon_t> ifpsCache;
-	extern std::unordered_map<std::string, box_t> ifrsCache;
+	extern std::unordered_map<uint64_t, polygon_t> nfpsCache;
+	extern std::unordered_map<uint64_t, polygon_t> ifpsCache;
+	extern std::unordered_map<uint64_t, box_t> ifrsCache;
 
-	inline std::string getNfpKey(const Piece &A, const Piece &B)
+	inline uint64_t getNfpKey(const Piece &A, const Piece &B)
 	{
-		return std::to_string(A.typeId) + "_" + std::to_string(A.rotation) + "-" +
-			   std::to_string(B.typeId) + "-" + std::to_string(B.rotation);
+		// 高32位编码A(typeId<<16 | rotation), 低32位编码B(typeId<<16 | rotation)
+		uint32_t hi = (static_cast<uint32_t>(A.typeId) << 16) | static_cast<uint32_t>(static_cast<int>(A.rotation));
+		uint32_t lo = (static_cast<uint32_t>(B.typeId) << 16) | static_cast<uint32_t>(static_cast<int>(B.rotation));
+		return (static_cast<uint64_t>(hi) << 32) | lo;
 	}
 
-	inline std::string getIfrKey(const Piece &A)
+	inline uint64_t getIfrKey(const Piece &A)
 	{
-		return std::to_string(A.typeId) + "_" + std::to_string(A.rotation);
+		return (static_cast<uint32_t>(A.typeId) << 16) | static_cast<uint32_t>(static_cast<int>(A.rotation));
 	}
 
 }

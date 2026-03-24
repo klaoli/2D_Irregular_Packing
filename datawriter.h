@@ -10,7 +10,7 @@ namespace MyNest {
 		static DataWrite *datawriter;
 		static DataWrite* getInstance();
 
-		void writeNfps(const std::unordered_map<std::string, polygon_t>& nfps, std::string &filePath) const;
+		void writeNfps(const std::unordered_map<uint64_t, polygon_t>& nfps, std::string &filePath) const;
 		void writePackingResult(const box_t &usedBin, const std::vector<Piece> &pieces) const;
 
 		void plotPiece(Piece &piece) const;

@@ -22,7 +22,7 @@ DataWrite *DataWrite::getInstance()
 	return datawriter;
 }
 
-void DataWrite::writeNfps(const std::unordered_map<std::string, polygon_t> &nfpPairs, std::string &filePath) const
+void DataWrite::writeNfps(const std::unordered_map<uint64_t, polygon_t> &nfpPairs, std::string &filePath) const
 {
 	// 提取目录路径
 	std::filesystem::path dirPath = std::filesystem::path(filePath).parent_path();

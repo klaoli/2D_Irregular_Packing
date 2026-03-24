@@ -32,8 +32,9 @@ void Packing::preprocess()
 	for (int angle = 0; angle < 360; angle += deltaAngle)
 	{
 		std::vector<Piece> temp;
-		for (auto piece : pieces)
+		for (auto &origPiece : pieces)
 		{
+			Piece piece = origPiece;
 			piece.polygon = geo->rotate(piece.polygon, (double)angle);	   // 旋转
 			piece.polygon = geo->offset(piece.polygon, parameters.minGap); // 伸缩
 			double dx = -piece.polygon.outer().front().x();
@@ -71,7 +72,7 @@ int Packing::checkNfps()
 		for (int j = i; j < allRotationPieces.size(); j++)
 		{
 
-			std::string nfpKey = getNfpKey(allRotationPieces[j], allRotationPieces[i]); // no fit polygon
+			auto nfpKey = getNfpKey(allRotationPieces[j], allRotationPieces[i]); // no fit polygon
 			if (nfpsCache.find(nfpKey) == nfpsCache.end())
 			{
 				// 两种方法构造nfp: 滑动法、闵可夫斯基矢量差方法
@@ -84,11 +85,11 @@ int Packing::checkNfps()
 
 				nfp = geo->simplifyPolygon(nfp, 1e-6, 0.1);
 
-				nfpsCache.insert(std::pair<std::string, polygon_t>(nfpKey, nfp));
+				nfpsCache.emplace(nfpKey, nfp);
 			}
 
-			nfpKey = getNfpKey(allRotationPieces[i], allRotationPieces[j]);
-			if (nfpsCache.find(nfpKey) == nfpsCache.end())
+			auto nfpKey2 = getNfpKey(allRotationPieces[i], allRotationPieces[j]);
+			if (nfpsCache.find(nfpKey2) == nfpsCache.end())
 			{
 
 				polygon_t nfp = nfpGenerator->minkowskiDifNfp(allRotationPieces[i].polygon, allRotationPieces[j].polygon);
@@ -98,7 +99,7 @@ int Packing::checkNfps()
 
 				nfp = geo->simplifyPolygon(nfp, 1e-6, 0.1);
 
-				nfpsCache.insert(std::pair<std::string, polygon_t>(nfpKey, nfp));
+				nfpsCache.emplace(nfpKey2, nfp);
 			}
 		}
 	}
@@ -125,15 +126,15 @@ int Packing::checkIfps()
 	for (int i = 0; i < allRotationPieces.size(); ++i)
 	{
 
-		std::string ifpKey = getIfrKey(allRotationPieces[i]); // 内接临界矩形
+		auto ifpKey = getIfrKey(allRotationPieces[i]); // 内接临界矩形
 
 		if (ifpsCache.find(ifpKey) == ifpsCache.end())
 		{
 			polygon_t ifp = nfpGenerator->generateIfp(bin, allRotationPieces[i].polygon);
-			ifpsCache.insert(std::pair<std::string, polygon_t>(ifpKey, ifp));
+			ifpsCache.emplace(ifpKey, ifp);
 			box_t ifr;
 			bg::envelope(ifp, ifr);
-			ifrsCache.insert(std::pair<std::string, box_t>(ifpKey, ifr));
+			ifrsCache.emplace(ifpKey, ifr);
 		}
 	}
 	DataWrite *dataWriter = DataWrite::getInstance();
@@ -169,8 +170,8 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 	const auto &_pieces = piecesCache[0];
 	for (int i = 0; i < _pieces.size(); ++i)
 	{
-		std::string ifrKey = getIfrKey(_pieces[i]);
-		polygon_t ifp = ifpsCache[ifrKey];
+		auto ifrKey = getIfrKey(_pieces[i]);
+		const polygon_t &ifp = ifpsCache[ifrKey];
 
 		Vector curVector;
 		if (placedPieces.size() == 0)
@@ -200,7 +201,7 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 		// nfp 转换成 clipper paths, 求并集得到 clipperUnionNfp.
 		for (int j = 0; j < placedPieces.size(); ++j)
 		{
-			std::string key = getNfpKey(placedPieces[j], _pieces[i]);
+			auto key = getNfpKey(placedPieces[j], _pieces[i]);
 			Paths clipperNfp = converter->boost2ClipperPolygon(nfpsCache[key]);
 			for (auto &path : clipperNfp)
 			{
