@@ -25,11 +25,6 @@ result/
 *.svg
 *.log
 
-# Images (screenshots)
-*.png
-*.jpg
-*.jpeg
-
 # Compiled objects
 *.o
 *.obj
