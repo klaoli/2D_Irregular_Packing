@@ -71,8 +71,8 @@ point_t GeometryConvert::clipper2BoostPoint(const IntPoint &point) const
 		return point_t(point.X, point.Y);
 	}
 	return point_t(
-		static_cast<double>(point.X / Parameters::scaleRate),
-		static_cast<double>(point.Y / Parameters::scaleRate));
+		static_cast<double>(point.X) / Parameters::scaleRate,
+		static_cast<double>(point.Y) / Parameters::scaleRate);
 }
 
 linestring_t GeometryConvert::clipper2BoostLine(const Path &path) const

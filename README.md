@@ -17,7 +17,7 @@
 
 ### 3. "破坏与重建" 宏观扰动 (Ruins and Recreate)
 
-针对超过 40 个零件的大规模排样场景，引入基于随机剔除与贪心复插的大尺度组合突变策略。以一定概率将当前沙盘中表现不佳的零件子集移除，并按序重新插入当前最大的可用空间，由此解决密集排布下的整体连带干涉问题。
+针对超过 50 个零件的大规模排样场景，引入冲突驱动的组合扰动策略：优先移除边界惩罚或零件间重叠贡献最高的零件，并保留少量随机扰动，再按序贪心复插，由此解决密集排布下的整体连带干涉问题。
 
 ### 4. Qt5 可视化与批量集采
 
@@ -52,6 +52,8 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ./ILSQN all        # 对全部数据集进行自动化基准测试
 ./ILSQN Jakobs1    # 指定单数据集演示
+./ILSQN all --seed 42     # 固定随机种子，生成可复现的 result.csv
+./ILSQN Shirts --seed 42  # 固定随机种子运行单数据集
 
 # 4. 编译与运行 Qt 可视化版本
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_QT_GUI=ON
@@ -61,9 +63,23 @@ make -j$(nproc)
 
 ---
 
+## 可选调参项
+
+参数文件除原有字段外，可加入以下可选字段：
+
+- `candidateSampleLimit`：候选点采样下限，默认 `800`，实际上限按 `min(8000, max(candidateSampleLimit, numPieces * 120))` 自适应。
+- `largeInstanceThreshold`：大规模实例阈值，默认 `50`。
+- `ruinRatio`：大规模实例每次破坏重建的零件比例，默认 `0.20`。
+- `conflictRuinRatio`：破坏集合中来自高冲突零件的比例，默认 `0.70`。
+- `minLargeIterations` / `minVeryLargeIterations`：大规模实例最低迭代数，默认分别为 `300` / `500`。
+- `parallelCost`：L-BFGS cost/gradient 的 OpenMP 并行开关，默认 `0`。固定 seed 基准建议保持默认串行，以获得更稳定的复现结果。
+
+---
+
 ## 目录结构说明
 
 - `parameters/`：存储各工业数据集的实验参数配置。
+- `data/Han.txt`：当前仓库保留的原始数据文件，但没有对应 `parameters/Han.txt`，不属于 `./ILSQN all` 当前 16 个基准数据集。
 - `nfpsCache/`：存放预先生成的内靠接矩形（IFP）与临界多边形（NFP）的 `.csv` 几何边界缓存数据。
 - `result.csv` / SVG 文件：算法运行结果统计及最终可视化矢量图输出目录。
 

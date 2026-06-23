@@ -3,6 +3,8 @@
 #include <sstream>
 #include <fstream>
 #include <cstring>
+#include <exception>
+#include <iostream>
 
 #include "parameters.h"
 
@@ -70,6 +72,13 @@ bool DataLoader::loadPieces()
 	}
 	fin.close();
 
+	if (v1.empty() || v2.size() < 2)
+	{
+		std::cerr << "Error: Pieces malformed header." << std::endl;
+		pieces.clear();
+		return false;
+	}
+
 	int numPolys = v1[0]; // 多边形的数量
 
 	bg::set<bg::max_corner, 0>(bin, v2[0] * parameters.polygonScaleRate);
@@ -78,6 +87,12 @@ bool DataLoader::loadPieces()
 	Geometry *geo = Geometry::getInstance();
 	for (int i = 0; i < v3.size(); ++i)
 	{
+		if (v3[i].size() < 6 || v3[i].size() % 2 != 0)
+		{
+			std::cerr << "Error: Pieces malformed polygon coordinates." << std::endl;
+			pieces.clear();
+			return false;
+		}
 		Piece piece;
 		polygon_t polygon;
 		for (int j = 0; j < v3[i].size(); j += 2)
@@ -121,6 +136,7 @@ bool DataLoader::loadPieces()
 
 bool DataLoader::loadNfps()
 {
+	nfpsCache.clear();
 	std::ifstream fin(parameters.nfpsPath, std::ios::in);
 	if (!fin)
 	{
@@ -141,6 +157,12 @@ bool DataLoader::loadNfps()
 		{
 			lineArray.push_back(str);
 		}
+		if (lineArray.size() < 2)
+		{
+			std::cerr << "Error: Nfps malformed cache line." << std::endl;
+			nfpsCache.clear();
+			return false;
+		}
 
 		double t;
 		std::istringstream iss;
@@ -152,12 +174,27 @@ bool DataLoader::loadNfps()
 		{
 			values.push_back(t);
 		}
+		if (values.size() < 6 || values.size() % 2 != 0)
+		{
+			std::cerr << "Error: Nfps malformed coordinate count." << std::endl;
+			nfpsCache.clear();
+			return false;
+		}
 
 		for (int j = 0; j < values.size(); j += 2)
 		{
 			nfp.outer().push_back(point_t(values[j], values[j + 1])); // �⻷
 		}
-		nfpsCache.emplace(std::stoull(lineArray[0]), nfp);
+		try
+		{
+			nfpsCache.emplace(std::stoull(lineArray[0]), nfp);
+		}
+		catch (const std::exception &)
+		{
+			std::cerr << "Error: Nfps malformed cache key." << std::endl;
+			nfpsCache.clear();
+			return false;
+		}
 	}
 	return nfpsCache.size() > 0;
 }
@@ -221,6 +258,25 @@ bool DataLoader::loadParameters(const std::string &parametersPath)
 		std::cerr << "Error: Parameters failed to open file." << std::endl;
 		return false;
 	}
+	const bool hasRandomSeed = parameters.hasRandomSeed;
+	const uint32_t randomSeed = parameters.randomSeed;
+	const size_t runtimeCandidateSampleLimit = parameters.candidateSampleLimit;
+	const size_t runtimeLargeInstanceThreshold = parameters.largeInstanceThreshold;
+	const double runtimeRuinRatio = parameters.ruinRatio;
+	const double runtimeConflictRuinRatio = parameters.conflictRuinRatio;
+	const int runtimeMinLargeIterations = parameters.minLargeIterations;
+	const int runtimeMinVeryLargeIterations = parameters.minVeryLargeIterations;
+	const bool runtimeParallelCost = parameters.parallelCost;
+	parameters = Parameters();
+	parameters.hasRandomSeed = hasRandomSeed;
+	parameters.randomSeed = randomSeed;
+	parameters.candidateSampleLimit = runtimeCandidateSampleLimit;
+	parameters.largeInstanceThreshold = runtimeLargeInstanceThreshold;
+	parameters.ruinRatio = runtimeRuinRatio;
+	parameters.conflictRuinRatio = runtimeConflictRuinRatio;
+	parameters.minLargeIterations = runtimeMinLargeIterations;
+	parameters.minVeryLargeIterations = runtimeMinVeryLargeIterations;
+	parameters.parallelCost = runtimeParallelCost;
 
 	static std::string minGap = "minGap";
 	static std::string polygonScaleRate = "polygonScaleRate";
@@ -233,6 +289,13 @@ bool DataLoader::loadParameters(const std::string &parametersPath)
 	static std::string orientations = "orientations";
 	static std::string inc = "inc";
 	static std::string dec = "dec";
+	static std::string candidateSampleLimit = "candidateSampleLimit";
+	static std::string largeInstanceThreshold = "largeInstanceThreshold";
+	static std::string ruinRatio = "ruinRatio";
+	static std::string conflictRuinRatio = "conflictRuinRatio";
+	static std::string minLargeIterations = "minLargeIterations";
+	static std::string minVeryLargeIterations = "minVeryLargeIterations";
+	static std::string parallelCost = "parallelCost";
 
 	std::string line;
 	while (std::getline(fin, line))
@@ -249,55 +312,102 @@ bool DataLoader::loadParameters(const std::string &parametersPath)
 				value = trim(value);
 
 				// 根据键名分配值给结构体成员
-				if (key.compare(minGap) == 0)
+				try
 				{
-					parameters.minGap = std::stod(value);
+					if (key.compare(minGap) == 0)
+					{
+						parameters.minGap = std::stod(value);
+					}
+					else if (key.compare(polygonScaleRate) == 0)
+					{
+						parameters.polygonScaleRate = std::stod(value);
+					}
+					else if (key.compare(piecePath) == 0)
+					{
+						parameters.piecePath = value;
+					}
+					else if (key.compare(nfpsPath) == 0)
+					{
+						parameters.nfpsPath = value;
+					}
+					else if (key.compare(ifpsPath) == 0)
+					{
+						parameters.ifpsPath = value;
+					}
+					else if (key.compare(resultPath) == 0)
+					{
+						parameters.resultPath = value;
+					}
+					else if (key.compare(maxRunTime) == 0)
+					{
+						parameters.maxRunTime = std::stod(value);
+					}
+					else if (key.compare(maxIteration) == 0)
+					{
+						parameters.maxIteration = std::stoi(value);
+					}
+					else if (key.compare(orientations) == 0)
+					{
+						parameters.orientations = std::stoi(value);
+					}
+					else if (key.compare(inc) == 0)
+					{
+						parameters.inc = std::stod(value);
+					}
+					else if (key.compare(dec) == 0)
+					{
+						parameters.dec = std::stod(value);
+					}
+					else if (key.compare(candidateSampleLimit) == 0)
+					{
+						parameters.candidateSampleLimit = std::stoull(value);
+					}
+					else if (key.compare(largeInstanceThreshold) == 0)
+					{
+						parameters.largeInstanceThreshold = std::stoull(value);
+					}
+					else if (key.compare(ruinRatio) == 0)
+					{
+						parameters.ruinRatio = std::stod(value);
+					}
+					else if (key.compare(conflictRuinRatio) == 0)
+					{
+						parameters.conflictRuinRatio = std::stod(value);
+					}
+					else if (key.compare(minLargeIterations) == 0)
+					{
+						parameters.minLargeIterations = std::stoi(value);
+					}
+					else if (key.compare(minVeryLargeIterations) == 0)
+					{
+						parameters.minVeryLargeIterations = std::stoi(value);
+					}
+					else if (key.compare(parallelCost) == 0)
+					{
+						parameters.parallelCost = std::stoi(value) != 0;
+					}
 				}
-				else if (key.compare(polygonScaleRate) == 0)
+				catch (const std::exception &)
 				{
-					parameters.polygonScaleRate = std::stod(value);
-				}
-				else if (key.compare(piecePath) == 0)
-				{
-					parameters.piecePath = value;
-				}
-				else if (key.compare(nfpsPath) == 0)
-				{
-					parameters.nfpsPath = value;
-				}
-				else if (key.compare(ifpsPath) == 0)
-				{
-					parameters.ifpsPath = value;
-				}
-				else if (key.compare(resultPath) == 0)
-				{
-					parameters.resultPath = value;
-				}
-				else if (key.compare(maxRunTime) == 0)
-				{
-					parameters.maxRunTime = std::stod(value);
-				}
-				else if (key.compare(maxIteration) == 0)
-				{
-					parameters.maxIteration = std::stoi(value);
-				}
-				else if (key.compare(orientations) == 0)
-				{
-					parameters.orientations = std::stoi(value);
-				}
-				else if (key.compare(inc) == 0)
-				{
-					parameters.inc = std::stod(value);
-				}
-				else if (key.compare(dec) == 0)
-				{
-					parameters.dec = std::stod(value);
+					std::cerr << "Error: Parameters malformed value for key: " << key << std::endl;
+					return false;
 				}
 			}
 		}
 	}
 
 	fin.close();
+
+	if (parameters.piecePath.empty() || parameters.nfpsPath.empty() || parameters.ifpsPath.empty() || parameters.resultPath.empty() ||
+		parameters.polygonScaleRate <= 0 || parameters.maxRunTime <= 0 || parameters.maxIteration <= 0 || parameters.orientations == 0 ||
+		parameters.candidateSampleLimit == 0 || parameters.largeInstanceThreshold == 0 ||
+		parameters.ruinRatio <= 0 || parameters.ruinRatio > 1 ||
+		parameters.conflictRuinRatio < 0 || parameters.conflictRuinRatio > 1 ||
+		parameters.minLargeIterations <= 0 || parameters.minVeryLargeIterations <= 0)
+	{
+		std::cerr << "Error: Parameters missing required fields or contain invalid values." << std::endl;
+		return false;
+	}
 
 	return true;
 }

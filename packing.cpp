@@ -3,9 +3,25 @@
 #include "parameters.h"
 #include "nofitpolygon.h"
 
+#include <algorithm>
 #include <fstream>
+#include <limits>
+#include <unordered_set>
 using namespace MyNest;
 Packing *Packing::packing = nullptr;
+
+static size_t expectedNfpKeyCount()
+{
+	std::unordered_set<uint64_t> uniquePieces;
+	for (const auto &rotationPieces : piecesCache)
+	{
+		for (const auto &piece : rotationPieces)
+		{
+			uniquePieces.insert(getIfrKey(piece));
+		}
+	}
+	return uniquePieces.size() * uniquePieces.size();
+}
 
 Packing::Packing()
 {
@@ -52,9 +68,15 @@ void Packing::preprocess()
 
 int Packing::checkNfps()
 {
-	if (nfpsCache.size() != 0)
+	size_t expectedCount = expectedNfpKeyCount();
+	if (expectedCount > 0 && nfpsCache.size() >= expectedCount)
 	{
 		return nfpsCache.size();
+	}
+	if (!nfpsCache.empty())
+	{
+		std::cout << "Warning: incomplete NFP cache, regenerating." << std::endl;
+		nfpsCache.clear();
 	}
 
 	std::vector<Piece> allRotationPieces; // 将所有角度的零件放入容器中，便于遍历
@@ -166,98 +188,134 @@ point_t Packing::findMostLeftPoint(std::vector<ring_t> &finalNfp)
 
 double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &placedVectors)
 {
+	placedPieces.clear();
 	placedVectors.clear();
-	const auto &_pieces = piecesCache[0];
-	for (int i = 0; i < _pieces.size(); ++i)
+	double placedMaxX = 0.0;
+	const int numPieces = piecesCache.empty() ? 0 : static_cast<int>(piecesCache[0].size());
+	for (int i = 0; i < numPieces; ++i)
 	{
-		auto ifrKey = getIfrKey(_pieces[i]);
-		const polygon_t &ifp = ifpsCache[ifrKey];
-
-		Vector curVector;
-		if (placedPieces.size() == 0)
-		{ // 排放第一个
-			curVector.x = Parameters::MAXDOUBLE;
-			point_t referPoint = _pieces[i].polygon.outer().front(); // 参考点
-			for (auto &point : ifp.outer())
-			{
-				if (point.x() - referPoint.x() < curVector.x)
-				{ // 寻找 ifr 最左边的位置
-					curVector = Vector(point.x() - referPoint.x(), point.y() - referPoint.y());
-				}
-			}
-			placedPieces.push_back(_pieces[i]);
-			placedVectors.push_back(curVector);
-			continue;
-		}
-#pragma region ClipperExecute
-		Paths clipperUnionNfp;
-		Paths clipperFinalNfp;
-		ClipperLib::Clipper clipperUnion;
-		ClipperLib::Clipper clipperDifference;
-		// bin_nfp 转换成 clipper paths，即 clipperBinNfp.
-		GeometryConvert *converter = GeometryConvert::getInstance();
-		Paths clipperBinNfp = converter->boost2ClipperPolygon(ifp);
-
-		// nfp 转换成 clipper paths, 求并集得到 clipperUnionNfp.
-		for (int j = 0; j < placedPieces.size(); ++j)
+		struct PlacementCandidate
 		{
-			auto key = getNfpKey(placedPieces[j], _pieces[i]);
-			Paths clipperNfp = converter->boost2ClipperPolygon(nfpsCache[key]);
-			for (auto &path : clipperNfp)
+			bool valid = false;
+			Piece piece;
+			Vector vector;
+			double maxX = std::numeric_limits<double>::max();
+			double minY = std::numeric_limits<double>::max();
+			double maxY = std::numeric_limits<double>::max();
+		};
+
+		PlacementCandidate bestCandidate;
+		for (size_t orientation = 0; orientation < piecesCache.size(); ++orientation)
+		{
+			const Piece &candidatePiece = piecesCache[orientation][i];
+			auto ifrKey = getIfrKey(candidatePiece);
+			const polygon_t &ifp = ifpsCache[ifrKey];
+			point_t referPoint = candidatePiece.polygon.outer().front();
+
+			auto considerPoint = [&](const point_t &point)
 			{
-				for (auto &point : path)
+				Vector curVector(point.x() - referPoint.x(), point.y() - referPoint.y());
+				double candidateMaxX = candidatePiece.bounding.max_corner().x() + curVector.x;
+				double candidateMinY = candidatePiece.bounding.min_corner().y() + curVector.y;
+				double candidateMaxY = candidatePiece.bounding.max_corner().y() + curVector.y;
+				double layoutMaxX = std::max(placedMaxX, candidateMaxX);
+				if (!bestCandidate.valid ||
+					layoutMaxX < bestCandidate.maxX ||
+					(layoutMaxX == bestCandidate.maxX && candidateMinY < bestCandidate.minY) ||
+					(layoutMaxX == bestCandidate.maxX && candidateMinY == bestCandidate.minY && candidateMaxY < bestCandidate.maxY))
 				{
-					point.X += static_cast<cInt>(placedVectors[j].x * Parameters::scaleRate);
-					point.Y += static_cast<cInt>(placedVectors[j].y * Parameters::scaleRate);
+					bestCandidate.valid = true;
+					bestCandidate.piece = candidatePiece;
+					bestCandidate.vector = curVector;
+					bestCandidate.maxX = layoutMaxX;
+					bestCandidate.minY = candidateMinY;
+					bestCandidate.maxY = candidateMaxY;
 				}
+			};
+
+			if (placedPieces.empty())
+			{
+				for (auto &point : ifp.outer())
+				{
+					considerPoint(point);
+				}
+				continue;
 			}
-			clipperUnion.AddPaths(clipperNfp, ClipperLib::PolyType::ptSubject, true);
-		}
-		if (!clipperUnion.Execute(ClipperLib::ClipType::ctUnion, clipperUnionNfp, ClipperLib::PolyFillType::pftNonZero, ClipperLib::PolyFillType::pftNonZero))
-		{
-			std::cout << "clipperUnion Execute Failed: " << _pieces[i].id << std::endl;
-			continue;
-		}
+#pragma region ClipperExecute
+			Paths clipperUnionNfp;
+			Paths clipperFinalNfp;
+			ClipperLib::Clipper clipperUnion;
+			ClipperLib::Clipper clipperDifference;
+			// bin_nfp 转换成 clipper paths，即 clipperBinNfp.
+			GeometryConvert *converter = GeometryConvert::getInstance();
+			Paths clipperBinNfp = converter->boost2ClipperPolygon(ifp);
 
-		// clipperBinNfp 经 clipperUnionNfp 裁剪（求差集）得到 clipperFinalNfp.
-		clipperDifference.AddPaths(clipperBinNfp, ClipperLib::PolyType::ptSubject, true);
-		clipperDifference.AddPaths(clipperUnionNfp, ClipperLib::PolyType::ptClip, true);
-		if (!clipperDifference.Execute(ClipperLib::ClipType::ctDifference, clipperFinalNfp, ClipperLib::PolyFillType::pftEvenOdd, ClipperLib::PolyFillType::pftNonZero))
-		{
-			std::cout << "clipperDifference Execute Failed: " << _pieces[i].id << std::endl;
-			continue;
-		}
+			// nfp 转换成 clipper paths, 求并集得到 clipperUnionNfp.
+			for (int j = 0; j < placedPieces.size(); ++j)
+			{
+				auto key = getNfpKey(placedPieces[j], candidatePiece);
+				Paths clipperNfp = converter->boost2ClipperPolygon(nfpsCache[key]);
+				for (auto &path : clipperNfp)
+				{
+					for (auto &point : path)
+					{
+						point.X += static_cast<cInt>(placedVectors[j].x * Parameters::scaleRate);
+						point.Y += static_cast<cInt>(placedVectors[j].y * Parameters::scaleRate);
+					}
+				}
+				clipperUnion.AddPaths(clipperNfp, ClipperLib::PolyType::ptSubject, true);
+			}
+			if (!clipperUnion.Execute(ClipperLib::ClipType::ctUnion, clipperUnionNfp, ClipperLib::PolyFillType::pftNonZero, ClipperLib::PolyFillType::pftNonZero))
+			{
+				std::cout << "clipperUnion Execute Failed: " << candidatePiece.id << std::endl;
+				continue;
+			}
 
-		// clean clipperFinalNfp
-		CleanPolygons(clipperFinalNfp, 0.0001 * Parameters::scaleRate);
+			// clipperBinNfp 经 clipperUnionNfp 裁剪（求差集）得到 clipperFinalNfp.
+			clipperDifference.AddPaths(clipperBinNfp, ClipperLib::PolyType::ptSubject, true);
+			clipperDifference.AddPaths(clipperUnionNfp, ClipperLib::PolyType::ptClip, true);
+			if (!clipperDifference.Execute(ClipperLib::ClipType::ctDifference, clipperFinalNfp, ClipperLib::PolyFillType::pftEvenOdd, ClipperLib::PolyFillType::pftNonZero))
+			{
+				std::cout << "clipperDifference Execute Failed: " << candidatePiece.id << std::endl;
+				continue;
+			}
 
-		clipperFinalNfp.erase(std::remove_if(clipperFinalNfp.begin(), clipperFinalNfp.end(),
-											 [](const Path &path)
-											 {
-												 return path.size() < 3 || ClipperLib::Area(path) < 0.1 * Parameters::scaleRate * Parameters::scaleRate;
-											 }),
-							  clipperFinalNfp.end());
+			// clean clipperFinalNfp
+			CleanPolygons(clipperFinalNfp, 0.0001 * Parameters::scaleRate);
 
-		if (clipperFinalNfp.empty())
-		{
-			std::cout << "clipperFinalNfp is empty: " << _pieces[i].id << std::endl;
-			continue;
-		}
+			clipperFinalNfp.erase(std::remove_if(clipperFinalNfp.begin(), clipperFinalNfp.end(),
+												 [](const Path &path)
+												 {
+													 return path.size() < 3 || ClipperLib::Area(path) < 0.1 * Parameters::scaleRate * Parameters::scaleRate;
+												 }),
+								  clipperFinalNfp.end());
+
+			if (clipperFinalNfp.empty())
+			{
+				continue;
+			}
 #pragma endregion ClipperExecute
 
 #pragma region Placement
-		std::vector<ring_t> finalNfp; // 在 final_nfp 的每个顶点上放置零件
-		finalNfp.reserve(clipperFinalNfp.size());
-		for (auto &path : clipperFinalNfp)
-		{
-			finalNfp.push_back(converter->clipper2BoostRing(path));
-		}
-		point_t mostLeftPoint = findMostLeftPoint(finalNfp); // 计算最左点
-		point_t referPoint = _pieces[i].polygon.outer().front();
-		curVector = Vector(mostLeftPoint.x() - referPoint.x(), mostLeftPoint.y() - referPoint.y());
-		placedPieces.push_back(_pieces[i]);
-		placedVectors.push_back(curVector);
+			for (auto &path : clipperFinalNfp)
+			{
+				ring_t ring = converter->clipper2BoostRing(path);
+				for (auto &point : ring)
+				{
+					considerPoint(point);
+				}
+			}
 #pragma endregion Placement
+		}
+
+		if (!bestCandidate.valid)
+		{
+			std::cout << "Warning: no initial placement candidate for piece " << i << std::endl;
+			continue;
+		}
+		placedPieces.push_back(bestCandidate.piece);
+		placedVectors.push_back(bestCandidate.vector);
+		placedMaxX = bestCandidate.maxX;
 	}
 
 	double minX = Parameters::MAXDOUBLE, maxX = 0;
@@ -265,17 +323,21 @@ double Packing::run(std::vector<Piece> &placedPieces, std::vector<Vector> &place
 
 	for (int i = 0; i < placedPieces.size(); ++i)
 	{
-		placedPieces[i].polygon = geo->translate(placedPieces[i].polygon, placedVectors[i].x, placedVectors[i].y);
-		placedPieces[i].bounding = geo->getEnvelope(placedPieces[i].polygon);
-		if (placedPieces[i].bounding.min_corner().x() < minX)
+		polygon_t translatedPolygon = geo->translate(placedPieces[i].polygon, placedVectors[i].x, placedVectors[i].y);
+		box_t translatedBounding = geo->getEnvelope(translatedPolygon);
+		if (translatedBounding.min_corner().x() < minX)
 		{
-			minX = placedPieces[i].bounding.min_corner().x();
+			minX = translatedBounding.min_corner().x();
 		}
 
-		if (placedPieces[i].bounding.max_corner().x() > maxX)
+		if (translatedBounding.max_corner().x() > maxX)
 		{
-			maxX = placedPieces[i].bounding.max_corner().x();
+			maxX = translatedBounding.max_corner().x();
 		}
+	}
+	if (placedPieces.empty())
+	{
+		return 0.0;
 	}
 	return maxX - minX;
 }
