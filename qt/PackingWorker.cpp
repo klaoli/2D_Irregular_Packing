@@ -39,14 +39,24 @@ void PackingWorker::run()
     DataLoader *dataloader = DataLoader::getInstance();
 
     emit statusMessage("正在加载参数...");
-    dataloader->loadParameters(filePath);
+    if (!dataloader->loadParameters(filePath)) {
+        emit statusMessage("参数加载失败");
+        emit finished(0.0);
+        return;
+    }
     emit parametersLoaded();
 
     emit statusMessage("正在加载零件数据...");
-    dataloader->loadPieces();
+    if (!dataloader->loadPieces()) {
+        emit statusMessage("零件数据加载失败");
+        emit finished(0.0);
+        return;
+    }
 
     emit statusMessage("正在加载 NFP 缓存...");
-    dataloader->loadNfps();
+    if (!dataloader->loadNfps()) {
+        emit statusMessage("NFP 缓存不可用，将自动重新生成...");
+    }
 
     emit statusMessage("排样算法运行中...");
 

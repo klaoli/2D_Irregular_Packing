@@ -5,9 +5,13 @@
 #include "datawriter.h"
 
 #include <eigen3/Eigen/Core>
+#include <algorithm>
 #include <random>
 #include <omp.h>
 #include <chrono>
+#include <cmath>
+#include <numeric>
+#include <utility>
 
 using namespace MyNest;
 using Eigen::VectorXd;
@@ -26,6 +30,23 @@ ILSQN::ILSQN(double _inc, double _dec)
 	{
 		allPiecesArea += piece.area;
 	}
+	if (parameters.hasRandomSeed)
+	{
+		baseSeed = parameters.randomSeed;
+	}
+	else
+	{
+		baseSeed = std::random_device{}();
+	}
+	rng.seed(baseSeed);
+	if (numPieces > static_cast<int>(parameters.largeInstanceThreshold))
+	{
+		parameters.maxIteration = std::max(parameters.maxIteration, static_cast<double>(parameters.minLargeIterations));
+	}
+	if (numPieces > static_cast<int>(parameters.largeInstanceThreshold * 1.6))
+	{
+		parameters.maxIteration = std::max(parameters.maxIteration, static_cast<double>(parameters.minVeryLargeIterations));
+	}
 
 	packing->preprocess(); // 零件预处理
 	currentPieces = piecesCache[0];
@@ -41,6 +62,36 @@ ILSQN *ILSQN::getInstance()
 		ilsqn = new ILSQN(parameters.inc, parameters.dec);
 	}
 	return ilsqn;
+}
+
+bool ILSQN::isLargeInstance() const
+{
+	return numPieces > static_cast<int>(parameters.largeInstanceThreshold);
+}
+
+int ILSQN::effectiveMaxIteration() const
+{
+	return std::max(1, static_cast<int>(parameters.maxIteration));
+}
+
+int ILSQN::effectiveRuinSize() const
+{
+	double ratio = isLargeInstance() ? parameters.ruinRatio : 0.15;
+	return std::max(3, static_cast<int>(std::ceil(numPieces * ratio)));
+}
+
+uint32_t ILSQN::makeLocalSeed(int idx, int orientation, uint64_t round) const
+{
+	uint64_t x = static_cast<uint64_t>(baseSeed) + 0x9e3779b97f4a7c15ULL;
+	x ^= static_cast<uint64_t>(idx + 1) * 0xbf58476d1ce4e5b9ULL;
+	x ^= static_cast<uint64_t>(orientation + 1) * 0x94d049bb133111ebULL;
+	x ^= (round + 1) * 0x2545f4914f6cdd1dULL;
+	x ^= x >> 30;
+	x *= 0xbf58476d1ce4e5b9ULL;
+	x ^= x >> 27;
+	x *= 0x94d049bb133111ebULL;
+	x ^= x >> 31;
+	return static_cast<uint32_t>(x);
 }
 
 // 计算点 p0 到线段 p1-p2 的最短平移向量
@@ -78,6 +129,62 @@ inline double pointToRectangleDistance(const point_t &p, const box_t &rect)
 	dy = std::max(dy, p.y() - rect.max_corner().y());
 
 	return dx > 0 || dy > 0 ? dx * dx + dy * dy : 0.0;
+}
+
+struct IndexedBounds
+{
+	int idx;
+	double minX;
+	double maxX;
+	double minY;
+	double maxY;
+};
+
+inline IndexedBounds makeBounds(const Piece &piece, const Vector &vector, int idx)
+{
+	return IndexedBounds{
+		idx,
+		piece.bounding.min_corner().x() + vector.x,
+		piece.bounding.max_corner().x() + vector.x,
+		piece.bounding.min_corner().y() + vector.y,
+		piece.bounding.max_corner().y() + vector.y};
+}
+
+inline bool yOverlaps(const IndexedBounds &a, const IndexedBounds &b)
+{
+	return a.minY < b.maxY && b.minY < a.maxY;
+}
+
+template <typename PieceGetter, typename VectorGetter, typename PairVisitor>
+void visitPotentialPairs(int count, PieceGetter pieceGetter, VectorGetter vectorGetter, PairVisitor visitor)
+{
+	std::vector<IndexedBounds> bounds;
+	bounds.reserve(count);
+	for (int i = 0; i < count; ++i)
+	{
+		const Vector &v = vectorGetter(i);
+		if (v.x == Parameters::MAXDOUBLE || v.y == Parameters::MAXDOUBLE)
+		{
+			continue;
+		}
+		bounds.push_back(makeBounds(pieceGetter(i), v, i));
+	}
+	std::sort(bounds.begin(), bounds.end(), [](const IndexedBounds &a, const IndexedBounds &b)
+			  { return a.minX < b.minX; });
+	for (size_t a = 0; a < bounds.size(); ++a)
+	{
+		for (size_t b = a + 1; b < bounds.size(); ++b)
+		{
+			if (bounds[b].minX >= bounds[a].maxX)
+			{
+				break;
+			}
+			if (yOverlaps(bounds[a], bounds[b]))
+			{
+				visitor(bounds[a].idx, bounds[b].idx);
+			}
+		}
+	}
 }
 
 double ILSQN::getPenetrationDepth(const Piece &p1, const Piece &p2, const Vector &v1, const Vector &v2)
@@ -186,13 +293,41 @@ double ILSQN::getTotalOverlap()
 	for (int i = 0; i < currentPieces.size(); ++i)
 	{
 		ret += getPenetrationDepth(currentPieces[i], currentVectors[i]);
-
-		for (int j = i + 1; j < currentPieces.size(); ++j)
+	}
+	visitPotentialPairs(
+		static_cast<int>(currentPieces.size()),
+		[&](int i) -> const Piece& { return currentPieces[i]; },
+		[&](int i) -> const Vector& { return currentVectors[i]; },
+		[&](int i, int j)
 		{
 			ret += getPenetrationDepth(currentPieces[i], currentPieces[j], currentVectors[i], currentVectors[j]);
-		}
-	}
+		});
 	return ret;
+}
+
+std::vector<double> ILSQN::computePieceOverlapContributions()
+{
+	std::vector<double> contributions(lbfgsPieces.size(), 0.0);
+	for (int i = 0; i < lbfgsPieces.size(); ++i)
+	{
+		if (lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE)
+		{
+			contributions[i] = Parameters::MAXDOUBLE;
+			continue;
+		}
+		contributions[i] += getPenetrationDepth(lbfgsPieces[i], lbfgsVectors[i]);
+	}
+	visitPotentialPairs(
+		static_cast<int>(lbfgsPieces.size()),
+		[&](int i) -> const Piece& { return lbfgsPieces[i]; },
+		[&](int i) -> const Vector& { return lbfgsVectors[i]; },
+		[&](int i, int j)
+		{
+			double overlap = getPenetrationDepth(lbfgsPieces[i], lbfgsPieces[j], lbfgsVectors[i], lbfgsVectors[j]);
+			contributions[i] += overlap;
+			contributions[j] += overlap;
+		});
+	return contributions;
 }
 
 double ILSQN::getOneTotalOverlap(const Piece &piece, const Vector &vec)
@@ -201,6 +336,10 @@ double ILSQN::getOneTotalOverlap(const Piece &piece, const Vector &vec)
 	ret += getPenetrationDepth(piece, vec);
 	for (int i = 0; i < lbfgsPieces.size(); ++i)
 	{
+		if (lbfgsPieces[i].id == piece.id)
+		{
+			continue;
+		}
 		ret += getPenetrationDepth(lbfgsPieces[i], piece, lbfgsVectors[i], vec);
 	}
 	return ret;
@@ -211,20 +350,83 @@ double ILSQN::costFunction(void *instance, const Eigen::VectorXd &x, Eigen::Vect
 	double ret = 0.0;
 	int numPieces = x.size() / 2;
 
-	// 直接从 x 读取向量，避免创建临时 vector
 	grad = VectorXd::Zero(x.size());
-	Vector seperateVec;
+	std::vector<Vector> vectors;
+	vectors.reserve(numPieces);
 	for (int i = 0; i < numPieces; ++i)
 	{
-		Vector vi(x(2 * i), x(2 * i + 1));
-		ret += (getPenetrationDepth(lbfgsPieces[i], vi, seperateVec));
-		grad[2 * i] += (-2 * seperateVec.x);
-		grad[2 * i + 1] += (-2 * seperateVec.y);
-
-		for (int j = i + 1; j < numPieces; ++j)
+		vectors.emplace_back(x(2 * i), x(2 * i + 1));
+	}
+	std::vector<std::pair<int, int>> pairs;
+	visitPotentialPairs(
+		numPieces,
+		[&](int i) -> const Piece& { return lbfgsPieces[i]; },
+		[&](int i) -> const Vector& { return vectors[i]; },
+		[&](int i, int j)
 		{
-			Vector vj(x(2 * j), x(2 * j + 1));
-			ret += (getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vj, vi, seperateVec));
+			pairs.emplace_back(i, j);
+		});
+
+	if (parameters.parallelCost && (numPieces > 32 || pairs.size() > 128))
+	{
+		const int threadCount = std::max(1, omp_get_max_threads());
+		std::vector<double> localCosts(threadCount, 0.0);
+		std::vector<std::vector<double>> localGrads(threadCount, std::vector<double>(x.size(), 0.0));
+
+#pragma omp parallel
+		{
+			const int tid = omp_get_thread_num();
+			double localCost = 0.0;
+			std::vector<double> &localGrad = localGrads[tid];
+
+#pragma omp for nowait
+			for (int i = 0; i < numPieces; ++i)
+			{
+				Vector seperateVec;
+				localCost += getPenetrationDepth(lbfgsPieces[i], vectors[i], seperateVec);
+				localGrad[2 * i] += (-2 * seperateVec.x);
+				localGrad[2 * i + 1] += (-2 * seperateVec.y);
+			}
+
+#pragma omp for nowait
+			for (int p = 0; p < static_cast<int>(pairs.size()); ++p)
+			{
+				const int i = pairs[p].first;
+				const int j = pairs[p].second;
+				Vector seperateVec;
+				localCost += getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vectors[j], vectors[i], seperateVec);
+				localGrad[2 * i] += (-2 * seperateVec.x);
+				localGrad[2 * i + 1] += (-2 * seperateVec.y);
+				localGrad[2 * j] += (2 * seperateVec.x);
+				localGrad[2 * j + 1] += (2 * seperateVec.y);
+			}
+
+			localCosts[tid] = localCost;
+		}
+
+		for (int t = 0; t < threadCount; ++t)
+		{
+			ret += localCosts[t];
+			for (int i = 0; i < grad.size(); ++i)
+			{
+				grad[i] += localGrads[t][i];
+			}
+		}
+	}
+	else
+	{
+		Vector seperateVec;
+		for (int i = 0; i < numPieces; ++i)
+		{
+			ret += getPenetrationDepth(lbfgsPieces[i], vectors[i], seperateVec);
+			grad[2 * i] += (-2 * seperateVec.x);
+			grad[2 * i + 1] += (-2 * seperateVec.y);
+		}
+		for (const auto &pair : pairs)
+		{
+			const int i = pair.first;
+			const int j = pair.second;
+			ret += getPenetrationDepth(lbfgsPieces[j], lbfgsPieces[i], vectors[j], vectors[i], seperateVec);
 			grad[2 * i] += (-2 * seperateVec.x);
 			grad[2 * i + 1] += (-2 * seperateVec.y);
 			grad[2 * j] += (2 * seperateVec.x);
@@ -277,18 +479,28 @@ double ILSQN::seperate(const int N, double currentOverlap)
 // useMiddlePoints = true:  使用顶点+中点 (movePolygon)
 void ILSQN::searchBestPosition(int idx, bool useMiddlePoints)
 {
-	std::vector<Vector> vecVectors(parameters.orientations);
-	std::vector<double> overlaps(parameters.orientations, parameters.MAXDOUBLE);
-
-#pragma omp parallel for num_threads(parameters.orientations)
-	for (int k = 0; k < parameters.orientations; ++k)
+	const int orientationCount = static_cast<int>(std::min(parameters.orientations, piecesCache.size()));
+	if (orientationCount == 0)
 	{
-		Piece &piece = piecesCache[k][idx];
+		return;
+	}
+	std::vector<Vector> vecVectors(orientationCount);
+	std::vector<double> overlaps(orientationCount, parameters.MAXDOUBLE);
+	const uint64_t samplingRound = samplingCounter++;
+
+#pragma omp parallel for num_threads(orientationCount)
+	for (int k = 0; k < orientationCount; ++k)
+	{
+		const Piece &piece = piecesCache[k][idx];
 		std::vector<polygon_t> nfps;
 		auto key = getIfrKey(piece);
 		nfps.push_back(ifpsCache[key]);
 		for (int i = 0; i < lbfgsPieces.size(); ++i)
 		{
+			if (lbfgsPieces[i].id == piece.id)
+			{
+				continue;
+			}
 			if (lbfgsVectors[i].x == Parameters::MAXDOUBLE || lbfgsVectors[i].y == Parameters::MAXDOUBLE)
 			{
 				continue;
@@ -308,6 +520,10 @@ void ILSQN::searchBestPosition(int idx, bool useMiddlePoints)
 			// movePolygon 策略：取顶点 + 中点
 			for (size_t i = 0; i < nfps.size(); ++i)
 			{
+				if (nfps[i].outer().size() < 2)
+				{
+					continue;
+				}
 				candidatePoints.insert(candidatePoints.end(), nfps[i].outer().begin(), nfps[i].outer().end() - 1);
 				for (size_t j = 0; j < nfps[i].outer().size() - 1; ++j)
 				{
@@ -321,19 +537,30 @@ void ILSQN::searchBestPosition(int idx, bool useMiddlePoints)
 		else
 		{
 			// findBestPosition 策略：取顶点 + NFP交点
-			std::vector<box_t> nfpBoxs;
-			nfpBoxs.reserve(nfps.size());
+			std::vector<box_t> nfpBoxs(nfps.size());
+			std::vector<char> validNfps(nfps.size(), 0);
 			for (size_t i = 0; i < nfps.size(); ++i)
 			{
-				box_t box;
-				bg::envelope(nfps[i], box);
-				nfpBoxs.push_back(box);
+				if (nfps[i].outer().size() < 2)
+				{
+					continue;
+				}
+				bg::envelope(nfps[i], nfpBoxs[i]);
+				validNfps[i] = 1;
 			}
 			for (size_t i = 0; i < nfps.size(); ++i)
 			{
+				if (!validNfps[i])
+				{
+					continue;
+				}
 				candidatePoints.insert(candidatePoints.end(), nfps[i].outer().begin(), nfps[i].outer().end() - 1);
 				for (size_t j = i + 1; j < nfps.size(); ++j)
 				{
+					if (!validNfps[j])
+					{
+						continue;
+					}
 					if (nfpBoxs[i].min_corner().x() >= nfpBoxs[j].max_corner().x() ||
 						nfpBoxs[j].min_corner().x() >= nfpBoxs[i].max_corner().x() ||
 						nfpBoxs[i].min_corner().y() >= nfpBoxs[j].max_corner().y() ||
@@ -351,41 +578,90 @@ void ILSQN::searchBestPosition(int idx, bool useMiddlePoints)
 			}
 		}
 
-		const int maxSamplePoints = 800;
+		const size_t maxSamplePoints = std::min<size_t>(
+			8000,
+			std::max<size_t>(parameters.candidateSampleLimit, static_cast<size_t>(numPieces) * 120));
+		std::vector<int> selectedIndices;
+		selectedIndices.reserve(std::min(maxSamplePoints, candidatePoints.size()));
+		std::vector<char> selected(candidatePoints.size(), 0);
+		auto addIndex = [&](int index)
+		{
+			if (index < 0 || index >= static_cast<int>(candidatePoints.size()) || selected[index])
+			{
+				return;
+			}
+			selected[index] = 1;
+			selectedIndices.push_back(index);
+		};
 		if (candidatePoints.size() <= maxSamplePoints)
 		{
-			for (size_t i = 0; i < candidatePoints.size(); ++i)
+			for (int i = 0; i < candidatePoints.size(); ++i)
 			{
-				Vector vec(candidatePoints[i].x(), candidatePoints[i].y());
-				double overlap = getOneTotalOverlap(piece, vec);
-				if (overlap < overlaps[k])
-				{
-					overlaps[k] = overlap;
-					vecVectors[k] = vec;
-				}
+				addIndex(i);
 			}
 		}
 		else
 		{
 			std::vector<int> numbers(candidatePoints.size());
 			std::iota(numbers.begin(), numbers.end(), 0);
-			thread_local std::mt19937 rng(std::random_device{}());
-			std::shuffle(numbers.begin(), numbers.end(), rng);
+			const size_t deterministicBudget = std::max<size_t>(1, maxSamplePoints / 2);
+			const size_t perHeuristicBudget = std::max<size_t>(1, deterministicBudget / 3);
 
-			for (int j = 0; j < maxSamplePoints; ++j)
+			std::sort(numbers.begin(), numbers.end(), [&](int a, int b)
+					  { return candidatePoints[a].x() < candidatePoints[b].x(); });
+			for (size_t j = 0; j < numbers.size() && selectedIndices.size() < perHeuristicBudget; ++j)
 			{
-				int i = numbers[j];
-				Vector vec(candidatePoints[i].x(), candidatePoints[i].y());
-				double overlap = getOneTotalOverlap(piece, vec);
-				if (overlap < overlaps[k])
-				{
-					overlaps[k] = overlap;
-					vecVectors[k] = vec;
-				}
+				addIndex(numbers[j]);
+			}
+			std::sort(numbers.begin(), numbers.end(), [&](int a, int b)
+					  { return candidatePoints[a].y() < candidatePoints[b].y(); });
+			for (size_t j = 0; j < numbers.size() && selectedIndices.size() < perHeuristicBudget * 2; ++j)
+			{
+				addIndex(numbers[j]);
+			}
+			const point_t referPoint = piece.polygon.outer().front();
+			std::sort(numbers.begin(), numbers.end(), [&](int a, int b)
+					  {
+						  double aMaxX = candidatePoints[a].x() - referPoint.x() + piece.bounding.max_corner().x();
+						  double bMaxX = candidatePoints[b].x() - referPoint.x() + piece.bounding.max_corner().x();
+						  return aMaxX < bMaxX;
+					  });
+			for (size_t j = 0; j < numbers.size() && selectedIndices.size() < deterministicBudget; ++j)
+			{
+				addIndex(numbers[j]);
+			}
+
+			std::mt19937 localRng(makeLocalSeed(idx, k, samplingRound));
+			std::shuffle(numbers.begin(), numbers.end(), localRng);
+			for (size_t j = 0; j < numbers.size() && selectedIndices.size() < maxSamplePoints; ++j)
+			{
+				addIndex(numbers[j]);
+			}
+		}
+
+		for (int i : selectedIndices)
+		{
+			Vector vec(candidatePoints[i].x(), candidatePoints[i].y());
+			double overlap = getOneTotalOverlap(piece, vec);
+			if (overlap < overlaps[k])
+			{
+				overlaps[k] = overlap;
+				vecVectors[k] = vec;
 			}
 		}
 	}
-	int index = std::min_element(overlaps.begin(), overlaps.end()) - overlaps.begin();
+	auto bestIt = std::min_element(overlaps.begin(), overlaps.end());
+	if (bestIt == overlaps.end() || *bestIt == Parameters::MAXDOUBLE)
+	{
+		std::cout << "Warning: no relocation candidate for piece " << idx << std::endl;
+		if (idx >= 0 && idx < static_cast<int>(currentPieces.size()) && idx < static_cast<int>(currentVectors.size()))
+		{
+			lbfgsPieces[idx] = currentPieces[idx];
+			lbfgsVectors[idx] = currentVectors[idx];
+		}
+		return;
+	}
+	int index = bestIt - overlaps.begin();
 	lbfgsPieces[idx] = piecesCache[index][idx];
 	lbfgsVectors[idx] = vecVectors[index];
 }
@@ -397,14 +673,39 @@ void ILSQN::ruinAndRecreate(int k)
 
 	std::vector<int> ruined;
 	ruined.reserve(k);
-	for (int i = 0; i < k; ++i)
+	std::vector<char> selected(numPieces, 0);
+	auto addRuined = [&](int idx)
 	{
-		int idx = generateRandomNumber(numPieces);
-		while (std::find(ruined.begin(), ruined.end(), idx) != ruined.end())
+		if (idx < 0 || idx >= numPieces || selected[idx])
 		{
-			idx = generateRandomNumber(numPieces);
+			return false;
 		}
+		selected[idx] = 1;
 		ruined.push_back(idx);
+		return true;
+	};
+
+	if (isLargeInstance())
+	{
+		std::vector<double> contributions = computePieceOverlapContributions();
+		std::vector<int> order(numPieces);
+		std::iota(order.begin(), order.end(), 0);
+		std::sort(order.begin(), order.end(), [&](int a, int b)
+				  { return contributions[a] > contributions[b]; });
+		int conflictCount = std::min(k, std::max(1, static_cast<int>(std::ceil(k * parameters.conflictRuinRatio))));
+		for (int idx : order)
+		{
+			if (static_cast<int>(ruined.size()) >= conflictCount)
+			{
+				break;
+			}
+			addRuined(idx);
+		}
+	}
+
+	while (static_cast<int>(ruined.size()) < k)
+	{
+		addRuined(generateRandomNumber(numPieces));
 	}
 
 	// 1. 破坏：移到界外，防止搜索干涉
@@ -440,22 +741,26 @@ void ILSQN::swapPolygons(int idx1, int idx2)
 
 int ILSQN::generateRandomNumber(int n)
 {
-	static thread_local std::mt19937 gen(std::random_device{}());
 	std::uniform_int_distribution<int> distribution(0, n - 1);
-	return distribution(gen);
+	return distribution(rng);
 }
 
 double ILSQN::generateRandomDouble(double min, double max)
 {
-	static thread_local std::mt19937 gen(std::random_device{}());
 	std::uniform_real_distribution<double> dis(min, max); // 均匀分布
 
-	return dis(gen); // 返回生成的随机数
+	return dis(rng); // 返回生成的随机数
 }
 
 void ILSQN::minimizeOverlap()
 {
+	feasible = false;
 	double totalOverlap = getTotalOverlap(); // 计算当前布局总的重叠量
+	if (totalOverlap < eps)
+	{
+		feasible = true;
+		return;
+	}
 
 	// === 精英保留策略：永远记住全局最优解 ===
 	double bestOverlap = totalOverlap;
@@ -463,11 +768,12 @@ void ILSQN::minimizeOverlap()
 	std::vector<Vector> eliteVectors = lbfgsVectors;
 	int stagnation = 0;                              // 连续无改善次数
 	int patience = std::max(10, numPieces / 2);       // 耐心窗口
+	const int maxIteration = effectiveMaxIteration();
 
 	int iter = 0;
-	while (iter++ < parameters.maxIteration)
+	while (iter++ < maxIteration)
 	{
-		int ruinSize = std::max(3, static_cast<int>(numPieces * 0.15));
+		int ruinSize = effectiveRuinSize();
 		// 当零件较多时，以 40% 的概率执行大规模"破坏与重建"扰动，否则普通互换
 		if (numPieces >= 30 && generateRandomNumber(100) < 40)
 		{
@@ -502,7 +808,7 @@ void ILSQN::minimizeOverlap()
 			if (delta < maxTolerable)
 			{
 				// 进度衰减概率：越到末期越保守
-				double progress = static_cast<double>(iter) / parameters.maxIteration;
+				double progress = static_cast<double>(iter) / maxIteration;
 				double prob = (1.0 - progress) * 0.3; // 最初 30% 概率，末期趋近 0
 				if (generateRandomDouble(0.0, 1.0) < prob)
 				{
@@ -546,6 +852,22 @@ void ILSQN::minimizeOverlap()
 			currentVectors = eliteVectors;
 			totalOverlap = bestOverlap;
 			stagnation = 0;
+			if (isLargeInstance())
+			{
+				ruinAndRecreate(std::max(3, effectiveRuinSize() / 2));
+				double repairedOverlap = seperate(numPieces * 2, totalOverlap);
+				if (repairedOverlap <= totalOverlap)
+				{
+					totalOverlap = repairedOverlap;
+					currentPieces = lbfgsPieces;
+					currentVectors = lbfgsVectors;
+				}
+				else
+				{
+					lbfgsPieces = currentPieces;
+					lbfgsVectors = currentVectors;
+				}
+			}
 		}
 
 		if (totalOverlap < eps)
@@ -579,7 +901,9 @@ double ILSQN::getIniaialSolution()
 	currentVectors.clear();
 	getInnerFitPolygons();
 	std::vector<Piece> placedPieces;
-	return packing->run(placedPieces, currentVectors);
+	double initialLength = packing->run(placedPieces, currentVectors);
+	currentPieces = placedPieces;
+	return initialLength;
 }
 
 double ILSQN::run()
@@ -591,6 +915,13 @@ double ILSQN::run()
 	bestVectors = currentVectors;
 	bestBin = currentBin;
 	bestLength = currentLength;
+
+	double feasibleLength = currentLength;
+	double infeasibleLength = 0.0;
+	bool hasInfeasibleLength = false;
+	double lastPrintedUtil = -1.0;
+	int lengthSearchIterations = 0;
+	const int maxLengthSearchIterations = 1000;
 
 	currentLength = (1 - dec) * currentLength; // 按比例缩短板材边界
 	currentBin.max_corner().set<0>(currentLength);
@@ -604,6 +935,11 @@ double ILSQN::run()
 
 	while (time_taken.count() < parameters.maxRunTime && !stopRequested)
 	{
+		if (++lengthSearchIterations > maxLengthSearchIterations)
+		{
+			std::cout << "达到最大外层搜索次数，提前结束。" << std::endl;
+			break;
+		}
 		getInnerFitPolygons(); // 获取内靠接矩形
 
 		minimizeOverlap(); // 执行最小化重叠
@@ -611,12 +947,17 @@ double ILSQN::run()
 		if (feasible)
 		{
 			double current_util = allPiecesArea / bg::area(currentBin);
-			std::cout << "当前利用率 = " << current_util << std::endl;
+			if (lastPrintedUtil < 0 || std::abs(current_util - lastPrintedUtil) > 1e-6)
+			{
+				std::cout << "当前利用率 = " << current_util << std::endl;
+				lastPrintedUtil = current_util;
+			}
 
 			bestPieces = currentPieces;
 			bestVectors = currentVectors;
 			bestBin = currentBin;
 			bestLength = currentLength;
+			feasibleLength = currentLength;
 
 			// 回调通知 GUI 更新
 			if (onLayoutUpdated) {
@@ -629,19 +970,42 @@ double ILSQN::run()
 				break;
 			}
 
-			currentLength = (1 - dec) * currentLength; // 缩减板材的长度
+			double nextLength = hasInfeasibleLength
+				? (feasibleLength + infeasibleLength) / 2.0
+				: (1 - dec) * feasibleLength; // 缩减板材的长度
+			double tolerance = std::max(1e-6, feasibleLength * 1e-8);
+			if (hasInfeasibleLength && std::abs(infeasibleLength - feasibleLength) <= tolerance)
+			{
+				std::cout << "板材长度搜索区间已收敛，提前结束。" << std::endl;
+				break;
+			}
+			if (std::abs(feasibleLength - nextLength) <= tolerance)
+			{
+				std::cout << "板材长度变化已低于阈值，提前结束。" << std::endl;
+				break;
+			}
+			currentLength = nextLength;
 			currentBin.max_corner().set<0>(currentLength);
 			feasible = false;
 		}
 		else
 		{
-			currentLength = (1 + inc) * currentLength;
-			if (currentLength >= bestLength)
+			infeasibleLength = currentLength;
+			hasInfeasibleLength = true;
+			currentVectors = bestVectors;
+			currentPieces = bestPieces;
+			double nextLength = (feasibleLength + infeasibleLength) / 2.0;
+			double tolerance = std::max(1e-6, feasibleLength * 1e-8);
+			if (std::abs(infeasibleLength - feasibleLength) <= tolerance)
 			{
-				currentLength = (1 - dec) * bestLength;
-				currentVectors = bestVectors;
-				currentPieces = bestPieces;
+				std::cout << "板材长度搜索区间已收敛，提前结束。" << std::endl;
+				break;
 			}
+			if (nextLength >= feasibleLength)
+			{
+				nextLength = (1 - dec) * feasibleLength;
+			}
+			currentLength = nextLength;
 			currentBin.max_corner().set<0>(currentLength);
 		}
 		end = std::chrono::steady_clock::now();
@@ -651,6 +1015,6 @@ double ILSQN::run()
 	static DataWrite *datawriter = DataWrite::getInstance();
 	datawriter->plotPieces(bestBin, bestPieces, bestVectors);
 
-	std::cout << "达到最大搜索时间，最好利用率 = " << allPiecesArea / bg::area(bestBin) << std::endl;
+	std::cout << "搜索结束，最好利用率 = " << allPiecesArea / bg::area(bestBin) << std::endl;
 	return allPiecesArea / bg::area(bestBin);
 }

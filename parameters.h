@@ -24,17 +24,27 @@ namespace MyNest
 		static constexpr double MAXDOUBLE = std::numeric_limits<double>::max();
 
 		double minGap = 0;		 // 零件间距，默认为0
-		double polygonScaleRate; // 多边形放大倍数
+		double polygonScaleRate = 1.0; // 多边形放大倍数
 		std::string piecePath;	 // 零件数据的路径
 		std::string nfpsPath;	 // nfp路径
 		std::string ifpsPath;	 // ifr路径
 		std::string resultPath;	 // 布局结果存放路径
-		double maxRunTime;		 // 算法最大运行时间
-		double maxIteration;
-		size_t orientations; // 多边形旋转方向数
+		double maxRunTime = 0.0;		 // 算法最大运行时间
+		double maxIteration = 0.0;
+		size_t orientations = 1; // 多边形旋转方向数
 
-		double inc; // 板子每次增加的比率
-		double dec; // 板子每次减少的比率
+		double inc = 0.0; // 板子每次增加的比率
+		double dec = 0.0; // 板子每次减少的比率
+
+		bool hasRandomSeed = false;
+		uint32_t randomSeed = 0;
+		size_t candidateSampleLimit = 800;
+		size_t largeInstanceThreshold = 50;
+		double ruinRatio = 0.20;
+		double conflictRuinRatio = 0.70;
+		int minLargeIterations = 300;
+		int minVeryLargeIterations = 500;
+		bool parallelCost = false;
 	};
 
 	extern Parameters parameters;

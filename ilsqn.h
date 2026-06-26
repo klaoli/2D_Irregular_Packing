@@ -3,6 +3,7 @@
 #include "packing.h"
 #include "lbfgs.hpp"
 #include <functional>
+#include <random>
 
 namespace MyNest
 {
@@ -28,6 +29,7 @@ namespace MyNest
 		inline double generateRandomDouble(double min, double max);
 		double getTotalOverlap();							  // 计算当前布局总的重叠量
 		double getOneTotalOverlap(const Piece &piece, const Vector &vec); // 计算piece与其他零件之间的重叠量
+		std::vector<double> computePieceOverlapContributions(); // 计算每个零件的冲突贡献
 
 		void getInnerFitPolygons();	 // 依据当前currentBin,获取内靠接矩形
 		double getIniaialSolution(); // 生成初始布局
@@ -61,9 +63,16 @@ namespace MyNest
 		double dec;
 		bool feasible = false;
 		double allPiecesArea = 0;
+		std::mt19937 rng;
+		uint32_t baseSeed = 0;
+		uint64_t samplingCounter = 0;
 
 		void searchBestPosition(int idx, bool useMiddlePoints); // 统一的搜索最佳位置逻辑
 		void ruinAndRecreate(int k); // 大规模排样扰动策略（破坏与重建）
+		uint32_t makeLocalSeed(int idx, int orientation, uint64_t round) const;
+		bool isLargeInstance() const;
+		int effectiveMaxIteration() const;
+		int effectiveRuinSize() const;
 
 	private:
 		ILSQN();
